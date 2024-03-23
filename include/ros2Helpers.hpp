@@ -3,7 +3,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "efr_pacsim/msg/perception_detections.hpp"
+#include "pacsim/msg/perception_detections.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
 #include "sensor_msgs/msg/imu.hpp"
@@ -37,7 +37,7 @@ private:
     int lastMaxId;
 };
 
-efr_pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
+pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
     const LandmarkList& sensorLms, std::string frameId, double time);
 
 sensor_msgs::msg::Imu createRosImuMsg(const ImuData& data);

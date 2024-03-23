@@ -80,16 +80,16 @@ visualization_msgs::msg::MarkerArray LandmarksMarkerWrapper::deleteAllMsg(std::s
     return out;
 }
 
-efr_pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
+pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
     const LandmarkList& sensorLms, std::string frameId, double time)
 {
-    efr_pacsim::msg::PerceptionDetections lmsMsg;
+    pacsim::msg::PerceptionDetections lmsMsg;
     lmsMsg.header.frame_id = frameId;
     lmsMsg.header.stamp = rclcpp::Time(static_cast<uint64_t>(time * 1e9));
     ;
     for (Landmark lm : sensorLms.list)
     {
-        efr_pacsim::msg::PerceptionDetection lmMsg;
+        pacsim::msg::PerceptionDetection lmMsg;
         lmMsg.header = lmsMsg.header;
         lmMsg.pose.pose.position.x = lm.position.x();
         lmMsg.pose.pose.position.y = lm.position.y();

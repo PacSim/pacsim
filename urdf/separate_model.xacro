@@ -12,7 +12,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-      <mesh filename="package://efr_pacsim/urdf/Model_without_Steering_Tires.stl" scale="0.01 0.01 0.01"/>
+      <mesh filename="package://pacsim/urdf/Model_without_Steering_Tires.stl" scale="0.01 0.01 0.01"/>
       </geometry>
 
     </visual>
@@ -21,7 +21,7 @@
     <visual>
       <origin rpy="0.0 0 0" xyz="0 0 0"/>
       <geometry>
-      <mesh filename="package://efr_pacsim/urdf/FL_Inside.stl" scale="0.01 0.01 0.01"/>
+      <mesh filename="package://pacsim/urdf/FL_Inside.stl" scale="0.01 0.01 0.01"/>
       </geometry>
 
       </visual>
@@ -30,7 +30,7 @@
     <visual>
       <origin rpy="0.0 0 0" xyz="0 0 0"/>
       <geometry>
-      <mesh filename="package://efr_pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
+      <mesh filename="package://pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
       </geometry>
     </visual>
   </link>
@@ -38,7 +38,7 @@
     <visual>
       <origin rpy="0.0 0 0" xyz="0 0 0"/>
       <geometry>
-      <mesh filename="package://efr_pacsim/urdf/FR_Inside.stl" scale="0.01 0.01 0.01"/>
+      <mesh filename="package://pacsim/urdf/FR_Inside.stl" scale="0.01 0.01 0.01"/>
       </geometry>
       </visual>
   </link>
@@ -46,7 +46,7 @@
     <visual>
       <origin rpy="0.0 0 3.1415" xyz="0 0 0"/>
       <geometry>
-      <mesh filename="package://efr_pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
+      <mesh filename="package://pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
       </geometry>
     </visual>
   </link>
@@ -54,7 +54,7 @@
     <visual>
       <origin rpy="0.0 0 0" xyz="0 0 0"/>
       <geometry>
-      <mesh filename="package://efr_pacsim/urdf/RR_Inside.stl" scale="0.01 0.01 0.01"/>
+      <mesh filename="package://pacsim/urdf/RR_Inside.stl" scale="0.01 0.01 0.01"/>
       </geometry>
       </visual>
   </link>
@@ -62,7 +62,7 @@
     <visual>
       <origin rpy="0.0 0 3.14" xyz="0 0 0"/>
       <geometry>
-      <mesh filename="package://efr_pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
+      <mesh filename="package://pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
       </geometry>
     </visual>
   </link>
@@ -70,7 +70,7 @@
     <visual>
       <origin rpy="0.0 0 3.1415" xyz="0 0 0"/>
       <geometry>
-      <mesh filename="package://efr_pacsim/urdf/RR_Inside.stl" scale="0.01 0.01 0.01"/>
+      <mesh filename="package://pacsim/urdf/RR_Inside.stl" scale="0.01 0.01 0.01"/>
       </geometry>
       </visual>
   </link>
@@ -78,7 +78,7 @@
     <visual>
       <origin rpy="0.0 0 0" xyz="0 0 0"/>
       <geometry>
-      <mesh filename="package://efr_pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
+      <mesh filename="package://pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
       </geometry>
     </visual>
   </link>
@@ -86,7 +86,7 @@
     <visual>
       <origin rpy="0.0 0 0" xyz="0 0 0"/>
       <geometry>
-      <mesh filename="package://efr_pacsim/urdf/Steering_Wheel.stl" scale="0.01 0.01 0.01"/>
+      <mesh filename="package://pacsim/urdf/Steering_Wheel.stl" scale="0.01 0.01 0.01"/>
       </geometry>
     </visual>
   </link>

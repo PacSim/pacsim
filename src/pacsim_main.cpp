@@ -14,8 +14,6 @@
 #include <tf2_ros/transform_broadcaster.h>
 
 #include "VehicleModel/VehicleModelBicycle.cpp"
-#include "VehicleModel/VehicleModelDoubleTrack7Dof.cpp"
-#include "VehicleModel/VehicleModelKinematic.cpp"
 #include "configParser.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
@@ -33,9 +31,9 @@
 
 #include "ros2Helpers.hpp"
 
-#include "efr_pacsim/msg/perception_detections.hpp"
-#include "efr_pacsim/msg/stamped_scalar.hpp"
-#include "efr_pacsim/msg/wheels.hpp"
+#include "pacsim/msg/perception_detections.hpp"
+#include "pacsim/msg/stamped_scalar.hpp"
+#include "pacsim/msg/wheels.hpp"
 
 #include "types.hpp"
 
@@ -53,15 +51,15 @@ rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clockPub;
 rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr velocity_pub;
 rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub;
 rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr mapVizPub;
-rclcpp::Publisher<efr_pacsim::msg::StampedScalar>::SharedPtr steeringFrontPub;
-rclcpp::Publisher<efr_pacsim::msg::StampedScalar>::SharedPtr steeringRearPub;
-rclcpp::Publisher<efr_pacsim::msg::Wheels>::SharedPtr wheelspeedPub;
-rclcpp::Publisher<efr_pacsim::msg::Wheels>::SharedPtr torquesPub;
+rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringFrontPub;
+rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringRearPub;
+rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr wheelspeedPub;
+rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr torquesPub;
 rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointStatePublisher;
 
 rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr perceptionVizPub;
-std::vector<rclcpp::Publisher<efr_pacsim::msg::PerceptionDetections>::SharedPtr> lms_pubs;
-std::map<std::shared_ptr<PerceptionSensor>, rclcpp::Publisher<efr_pacsim::msg::PerceptionDetections>::SharedPtr>
+std::vector<rclcpp::Publisher<pacsim::msg::PerceptionDetections>::SharedPtr> lms_pubs;
+std::map<std::shared_ptr<PerceptionSensor>, rclcpp::Publisher<pacsim::msg::PerceptionDetections>::SharedPtr>
     perceptionSensorPublisherMap;
 std::map<std::shared_ptr<PerceptionSensor>, std::shared_ptr<LandmarksMarkerWrapper>> perceptionSensorMarkersWrappersMap;
 std::map<std::shared_ptr<PerceptionSensor>, rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr>
@@ -214,7 +212,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
         if (steeringSensorFront->RunTick(steeringDataFront, simTime))
         {
             StampedScalar steeringData = steeringSensorFront->getOldest();
-            efr_pacsim::msg::StampedScalar msg;
+            pacsim::msg::StampedScalar msg;
             msg.value = steeringData.data;
             msg.stamp = rclcpp::Time(static_cast<uint64_t>(steeringData.timestamp * 1e9));
             steeringFrontPub->publish(msg);
@@ -223,7 +221,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
         if (steeringSensorRear->RunTick(steeringDataRear, simTime))
         {
             StampedScalar steeringData = steeringSensorRear->getOldest();
-            efr_pacsim::msg::StampedScalar msg;
+            pacsim::msg::StampedScalar msg;
             msg.value = steeringData.data;
             msg.stamp = rclcpp::Time(static_cast<uint64_t>(steeringData.timestamp * 1e9));
             steeringRearPub->publish(msg);
@@ -242,7 +240,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
                 perceptionSensorVizPublisherMap[perceptionSensor]->publish(lmsMarkerMsg);
 
                 mapVizPub->publish(mapMarkerMsg);
-                efr_pacsim::msg::PerceptionDetections lmsMsg
+                pacsim::msg::PerceptionDetections lmsMsg
                     = LandmarkListToRosMessage(sensorLms, sensorLms.frame_id, sensorLms.timestamp);
                 perceptionSensorPublisherMap[perceptionSensor]->publish(lmsMsg);
             }
@@ -256,7 +254,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
         if (wheelspeedSensor->RunTick(wspd, t, rEulerAngles, simTime))
         {
             wspd = wheelspeedSensor->getOldest();
-            efr_pacsim::msg::Wheels wspdMsg;
+            pacsim::msg::Wheels wspdMsg;
             wspdMsg.fl = wspd.FL;
             wspdMsg.fr = wspd.FR;
             wspdMsg.rl = wspd.RL;
@@ -267,7 +265,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
         if (torquesSensor->RunTick(torques, t, rEulerAngles, simTime))
         {
             torques = torquesSensor->getOldest();
-            efr_pacsim::msg::Wheels torquesMsg;
+            pacsim::msg::Wheels torquesMsg;
             torquesMsg.fl = torques.FL;
             torquesMsg.fr = torques.FR;
             torquesMsg.rl = torques.RL;
@@ -292,14 +290,14 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     return 0;
 }
 
-void cbFuncLat(const efr_pacsim::msg::StampedScalar& msg)
+void cbFuncLat(const pacsim::msg::StampedScalar& msg)
 {
     std::lock_guard<std::mutex> l(mutexSimTime);
     deadTimeSteeringFront.addVal(msg.value, simTime);
     deadTimeSteeringRear.addVal(0.0, simTime);
 }
 
-void cbFuncTorquesInverterMin(const efr_pacsim::msg::Wheels& msg)
+void cbFuncTorquesInverterMin(const pacsim::msg::Wheels& msg)
 {
     std::lock_guard<std::mutex> l(mutexSimTime);
     Wheels min;
@@ -310,7 +308,7 @@ void cbFuncTorquesInverterMin(const efr_pacsim::msg::Wheels& msg)
     deadTimeMinTorques.addVal(min, simTime);
 }
 
-void cbFuncTorquesInverterMax(const efr_pacsim::msg::Wheels& msg)
+void cbFuncTorquesInverterMax(const pacsim::msg::Wheels& msg)
 {
     std::lock_guard<std::mutex> l(mutexSimTime);
     Wheels max;
@@ -321,7 +319,7 @@ void cbFuncTorquesInverterMax(const efr_pacsim::msg::Wheels& msg)
     deadTimeMaxTorques.addVal(max, simTime);
 }
 
-void cbWheelspeeds(const efr_pacsim::msg::Wheels& msg)
+void cbWheelspeeds(const pacsim::msg::Wheels& msg)
 {
     std::lock_guard<std::mutex> l(mutexSimTime);
     Wheels w { msg.fl, msg.fr, msg.rl, msg.rr };
@@ -404,14 +402,14 @@ int main(int argc, char** argv)
     rclcpp::init(argc, argv);
     auto node = std::make_shared<rclcpp::Node>("pacsim_node");
 
-    auto latsub = node->create_subscription<efr_pacsim::msg::StampedScalar>("/pacsim/steering_setpoint", 1, cbFuncLat);
+    auto latsub = node->create_subscription<pacsim::msg::StampedScalar>("/pacsim/steering_setpoint", 1, cbFuncLat);
     auto torquessubmin
-        = node->create_subscription<efr_pacsim::msg::Wheels>("/pacsim/torques_min", 1, cbFuncTorquesInverterMin);
+        = node->create_subscription<pacsim::msg::Wheels>("/pacsim/torques_min", 1, cbFuncTorquesInverterMin);
     auto torquessubmax
-        = node->create_subscription<efr_pacsim::msg::Wheels>("/pacsim/torques_max", 1, cbFuncTorquesInverterMax);
+        = node->create_subscription<pacsim::msg::Wheels>("/pacsim/torques_max", 1, cbFuncTorquesInverterMax);
 
     auto wspdSetpointSub
-        = node->create_subscription<efr_pacsim::msg::Wheels>("/pacsim/wheelspeed_setpoints", 1, cbWheelspeeds);
+        = node->create_subscription<pacsim::msg::Wheels>("/pacsim/wheelspeed_setpoints", 1, cbWheelspeeds);
 
     velocity_pub = node->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("/pacsim/velocity", 3);
 
@@ -428,7 +426,7 @@ int main(int argc, char** argv)
     {
         auto detectionsMarkersWrapper = std::make_shared<LandmarksMarkerWrapper>(
             0.0, 1.0, 0.0, 0.5, 0.5, 0.35, 0.8, 0.1, "pacsim/" + i->getName());
-        auto pub = node->create_publisher<efr_pacsim::msg::PerceptionDetections>(
+        auto pub = node->create_publisher<pacsim::msg::PerceptionDetections>(
             "/pacsim/perception/" + i->getName() + "/landmarks", 1);
         auto pubViz = node->create_publisher<visualization_msgs::msg::MarkerArray>(
             "/pacsim/perception/" + i->getName() + "/visualization", 1);
@@ -443,10 +441,10 @@ int main(int argc, char** argv)
         auto pub = node->create_publisher<sensor_msgs::msg::Imu>("/pacsim/imu/" + i->getName(), 3);
         imuPublisherMap[i] = pub;
     }
-    steeringFrontPub = node->create_publisher<efr_pacsim::msg::StampedScalar>("/pacsim/steeringFront", 1);
-    steeringRearPub = node->create_publisher<efr_pacsim::msg::StampedScalar>("/pacsim/steeringRear", 1);
-    wheelspeedPub = node->create_publisher<efr_pacsim::msg::Wheels>("/pacsim/wheelspeeds", 1);
-    torquesPub = node->create_publisher<efr_pacsim::msg::Wheels>("/pacsim/torques", 1);
+    steeringFrontPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/steeringFront", 1);
+    steeringRearPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/steeringRear", 1);
+    wheelspeedPub = node->create_publisher<pacsim::msg::Wheels>("/pacsim/wheelspeeds", 1);
+    torquesPub = node->create_publisher<pacsim::msg::Wheels>("/pacsim/torques", 1);
 
     jointStatePublisher = node->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 3);
 

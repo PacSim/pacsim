@@ -1,2 +1,2 @@
 std_msgs/Header header
-efr_pacsim/PerceptionDetection[] detections
+pacsim/PerceptionDetection[] detections
