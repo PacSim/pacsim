@@ -1,0 +1,91 @@
+perception_sensors:
+  - sensor:
+    name: "livox_front"
+    enabled: true
+    rate: 10
+    delay: 
+      mean: 0.2
+    pose:
+      position: [0.0,0.0,0.0]
+      orientation: [0.0,0.0,0.0]
+    observation:
+      min_range: 1
+      max_range: 45
+      min_angle_horizontal: -1.0472
+      max_angle_horizontal: 1.0472
+      min_angle_vertical: -0.2181662
+      max_angle_vertical: 0.2181662
+
+    noise:
+      cartesian: #x, y, z
+        mean: [0.0, 0.0, 0.0]
+        sigma: [0.01, 0.01, 0.01]
+      angle: # horizontal, vertical
+        mean: [0.0, 0.0]
+        sigma: [0.001, 0.001]
+      range:
+        mean: 0.0
+        sigma: 0.02
+      range_relative:
+        mean: 0.0
+        sigma: 0.0001
+  - sensor:
+    name: "livox_left2"
+    enabled: true
+    rate: 10
+    delay: 
+      mean: 0.1
+    pose:
+      position: [-1.7533289, 0.59746433, 0.07546455]
+      orientation: [0.12472367, -0.00889492, 1.21845561]
+    observation:
+      min_range: 1
+      max_range: 45
+      min_angle_horizontal: -1.0472
+      max_angle_horizontal: 1.0472
+      min_angle_vertical: -0.2181662
+      max_angle_vertical: 0.2181662
+
+    noise:
+      cartesian: #x, y, z
+        mean: [0.0, 0.0, 0.0]
+        sigma: [0.01, 0.01, 0.01]
+      angle: # horizontal, vertical
+        mean: [0.0, 0.0]
+        sigma: [0.001, 0.001]
+      range:
+        mean: 0.0
+        sigma: 0.02
+      range_relative:
+        mean: 0.0
+        sigma: 0.0001
+  - sensor:
+    name: "livox_right2"
+    enabled: true
+    rate: 10
+    delay: 
+      mean: 0.1
+    pose:
+      position: [-1.73520207, -0.61862863, 0.04065186]
+      orientation: [-0.08730302, 0.06381912, -1.23762976]
+    observation:
+      min_range: 1
+      max_range: 45
+      min_angle_horizontal: -1.0472
+      max_angle_horizontal: 1.0472
+      min_angle_vertical: -0.2181662
+      max_angle_vertical: 0.2181662
+
+    noise:
+      cartesian: #x, y, z
+        mean: [0.0, 0.0, 0.0]
+        sigma: [0.01, 0.01, 0.01]
+      angle: # horizontal, vertical
+        mean: [0.0, 0.0]
+        sigma: [0.001, 0.001]
+      range:
+        mean: 0.0
+        sigma: 0.02
+      range_relative:
+        mean: 0.0
+        sigma: 0.0001

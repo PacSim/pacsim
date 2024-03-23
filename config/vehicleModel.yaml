@@ -1,0 +1,23 @@
+vehicle_model:
+  simple_bicycle_model:
+  # some made up values
+    kinematics:
+      lr: 0.72
+      lf: 0.72
+      sf: 1.15
+      sr: 1.15
+    tire:
+      Blat: 9.63
+      Clat: -1.39
+      Dlat: 1.6
+      Elat: 1.0
+    aero:
+      cla: 3.7
+      cda: 1.1
+      aeroArea: 1.1
+    m: 178.0
+    Izz: 111.0
+    wheelRadius: 0.206
+    gearRatio: 12.23
+    innerSteeringRatio: 0.255625
+    outerSteeringRaito: 0.20375

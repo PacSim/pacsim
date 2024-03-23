@@ -1,0 +1,40 @@
+sensors:
+  steering_front:
+    rate: 200
+    dead_time: 0.005
+    error:
+      mean: 0.0
+      sigma: 0.00001
+  steering_rear:
+    rate: 200
+    dead_time: 0.005
+    error:
+      mean: 0.0
+      sigma: 0.00001
+  wheelspeeds:
+    rate: 200
+    dead_time: 0.005
+    error:
+      mean: 0.0
+      sigma: 0.1
+  torques:
+    rate: 200
+    dead_time: 0.005
+    error:
+      mean: 0.0
+      sigma: 0.01
+  imus:
+    - imu:
+      name: "cog_imu"
+      frame: "cog_static"
+      pose:
+        position: [0.0,0.0,0.0]
+        orientation: [0.0,0.0,0.0]
+      rate: 200
+      dead_time: 0.005
+      error_acc:
+        mean: 0.0
+        sigma: 0.05
+      error_rot:
+        mean: 0.0
+        sigma: 0.001

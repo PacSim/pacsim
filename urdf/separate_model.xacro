@@ -1,0 +1,157 @@
+<robot name="RosE" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="baseFrame" value="car" />
+  <link name="${baseFrame}">
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+        <geometry>
+        <cylinder radius="0.001" length=".001" />
+      </geometry>
+    </visual>
+  </link>
+   <link name="Modell">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+      <mesh filename="package://efr_pacsim/urdf/Model_without_Steering_Tires.stl" scale="0.01 0.01 0.01"/>
+      </geometry>
+
+    </visual>
+  </link>
+  <link name="FL_inside">
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+      <mesh filename="package://efr_pacsim/urdf/FL_Inside.stl" scale="0.01 0.01 0.01"/>
+      </geometry>
+
+      </visual>
+  </link>
+  <link name="FL_outside">
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+      <mesh filename="package://efr_pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="FR_inside">
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+      <mesh filename="package://efr_pacsim/urdf/FR_Inside.stl" scale="0.01 0.01 0.01"/>
+      </geometry>
+      </visual>
+  </link>
+  <link name="FR_outside">
+    <visual>
+      <origin rpy="0.0 0 3.1415" xyz="0 0 0"/>
+      <geometry>
+      <mesh filename="package://efr_pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RR_inside">
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+      <mesh filename="package://efr_pacsim/urdf/RR_Inside.stl" scale="0.01 0.01 0.01"/>
+      </geometry>
+      </visual>
+  </link>
+  <link name="RR_outside">
+    <visual>
+      <origin rpy="0.0 0 3.14" xyz="0 0 0"/>
+      <geometry>
+      <mesh filename="package://efr_pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RL_inside">
+    <visual>
+      <origin rpy="0.0 0 3.1415" xyz="0 0 0"/>
+      <geometry>
+      <mesh filename="package://efr_pacsim/urdf/RR_Inside.stl" scale="0.01 0.01 0.01"/>
+      </geometry>
+      </visual>
+  </link>
+  <link name="RL_outside">
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+      <mesh filename="package://efr_pacsim/urdf/FL_Outside.stl" scale="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="steering_wheel">
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+      <mesh filename="package://efr_pacsim/urdf/Steering_Wheel.stl" scale="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="Modell_center_of_gravity" type="fixed">
+    <parent link="car"/>
+    <child link="Modell"/>
+    <origin xyz="0.9 0 0" rpy="0 0 0" />
+  </joint>
+  <joint name="FL_steer" type="revolute">
+    <parent link="Modell"/>
+    <child link="FL_inside"/>
+    <origin xyz="-0.0998 0.6 0.204" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <limit upper=".5" lower="-.5" effort="10" velocity="10" />
+  </joint>
+  <joint name="FL_rotate" type="continuous">
+    <parent link="FL_inside"/>
+    <child link="FL_outside"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+  </joint>
+  <joint name="FR_steer" type="revolute">
+    <parent link="Modell"/>
+    <child link="FR_inside"/>
+    <origin xyz="-0.0998 -0.6 0.204" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <limit upper=".5" lower="-.5" effort="10" velocity="10" />
+  </joint>
+  <joint name="FR_rotate" type="continuous">
+    <parent link="FR_inside"/>
+    <child link="FR_outside"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+  </joint>
+  <joint name="RR_inside" type="fixed">
+    <parent link="Modell"/>
+    <child link="RR_inside"/>
+    <origin xyz="-1.64 -0.58 0.204" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+  </joint>
+  <joint name="RR_rotate" type="continuous">
+    <parent link="RR_inside"/>
+    <child link="RR_outside"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+  </joint>
+  <joint name="RL_inside" type="fixed">
+    <parent link="Modell"/>
+    <child link="RL_inside"/>
+    <origin xyz="-1.64 0.58 0.204" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+  </joint>
+  <joint name="RL_rotate" type="continuous">
+    <parent link="RL_inside"/>
+    <child link="RL_outside"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+  </joint>
+
+  <joint name="steering" type="revolute">
+    <parent link="Modell"/>
+    <child link="steering_wheel"/>
+    <origin xyz="-0.6 0 0.51" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <limit upper=".5" lower="-.5" effort="10" velocity="10" />
+  </joint>
+
+</robot>
