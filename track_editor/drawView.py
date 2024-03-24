@@ -630,7 +630,7 @@ class drawScene(QGraphicsScene):
         self.imageUnknown = QImage("icons/coneUnknown.png").scaledToHeight(self.normalConeHeight, mode=self.scalingMode)
         self.imageInvisible = QImage("icons/coneInvisible.png").scaledToHeight(self.normalConeHeight, mode=self.scalingMode)
         self.imageTimeKeeping = QImage("icons/timeKeeping.png").scaledToHeight(self.bigConeHeight, mode=self.scalingMode)
-        self.imageCompass = QImage("compass.png")
+        self.imageCompass = QImage("icons/compass.png")
         self.compass = QtWidgets.QGraphicsPixmapItem(QPixmap.fromImage(self.imageCompass).scaledToHeight(self.compassHeight, mode=self.scalingMode))
         self.compass.setPos(0,0)
         self.compass.setZValue(2)
