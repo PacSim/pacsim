@@ -89,4 +89,5 @@ install(FILES ${pacsim_CONFIGS}
 ament_auto_package(INSTALL_TO_SHARE
   tracks
   config
+  launch
 )
