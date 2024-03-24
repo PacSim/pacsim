@@ -41,11 +41,11 @@ def convert_to_object_class(uri: str) -> str:
 	if uri == "cone_yellow":
 		return "yellow"
 	if uri == "time_keeping":
-		return "invisible"
+		return "timekeeping"
 	if uri == "cone_orange":
-		return "small_orange"
+		return "small-orange"
 	if uri == "cone_orange_big":
-		return "big_orange"
+		return "big-orange"
 	return "unknown"
 
 
@@ -71,7 +71,6 @@ def extract_cones(elements: list) -> dict:
 		elif "cone_left" in name.text:
 			left.append((x, y, z, object_class))
 		elif "tk_device" in name.text:
-			# object_class = "invisible"
 			time_keeping.append((x, y, z, object_class))
 		else:
 			unknown.append((x, y, z, object_class))
@@ -96,7 +95,9 @@ def write_to_yaml(cones: dict, file_path: str) -> None:
 	start_orientation = (0.0, 0.0, 0.0)
 
 	yaml_file = OrderedDict({
+		"version": 0.9,
 		"track": OrderedDict({
+			"lanesFirstWithLastConnected": True,
 			"start": OrderedDict({
 					"position": f'[{start_position[0]}, {start_position[1]}, {start_position[2]}]',
 					"orientation": f'[{start_orientation[0]}, {start_orientation[1]}, {start_orientation[2]}]'}),
