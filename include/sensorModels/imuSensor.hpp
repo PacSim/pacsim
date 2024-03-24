@@ -1,15 +1,16 @@
 #ifndef PACSIMIMUSENSOR_HPP
 #define PACSIMIMUSENSOR_HPP
 
-#include "types.hpp"
 #include "configParser.hpp"
-#include "transform.hpp"
-#include <queue>
 #include "sensorBase.hpp"
+#include "transform.hpp"
+#include "types.hpp"
+#include <queue>
 #include <random>
 
-class ImuSensor : public SensorBase<ImuData>{
-  public:
+class ImuSensor : public SensorBase<ImuData>
+{
+public:
     ImuSensor(double rate, double deadTime);
 
     void readConfig(ConfigElement& config);
@@ -21,13 +22,14 @@ class ImuSensor : public SensorBase<ImuData>{
     ImuData applyError(ImuData input);
 
     std::string getName();
-    private:
-        double error_mean_acc;
-        double error_sigma_acc;
-        double error_mean_rot;
-        double error_sigma_rot;
-        std::string name;
-        std::string frame;
+
+private:
+    double error_mean_acc;
+    double error_sigma_acc;
+    double error_mean_rot;
+    double error_sigma_rot;
+    std::string name;
+    std::string frame;
 };
 
 #endif /* PACSIMIMUSENSOR_HPP */

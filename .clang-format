@@ -1,0 +1,6 @@
+BasedOnStyle: WebKit 
+IndentWidth: 4 
+SeparateDefinitionStyle: SDS_Always 
+UseTabStyle: UT_Always 
+BreakBeforeBraces: Allman
+ColumnLimit:     120

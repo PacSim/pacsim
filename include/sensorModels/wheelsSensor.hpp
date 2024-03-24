@@ -1,14 +1,15 @@
 #ifndef PACSIMWHEELSSENSOR_HPP
 #define PACSIMWHEELSSENSOR_HPP
 
-#include "types.hpp"
 #include "configParser.hpp"
-#include <queue>
 #include "sensorBase.hpp"
+#include "types.hpp"
+#include <queue>
 #include <random>
 
-class WheelsSensor : public SensorBase<Wheels>{
-  public:
+class WheelsSensor : public SensorBase<Wheels>
+{
+public:
     WheelsSensor(double rate, double deadTime);
 
     void readConfig(ConfigElement& config);

@@ -1,12 +1,12 @@
 #ifndef CONFIGPARSER_HPP
 #define CONFIGPARSER_HPP
 
-#include "types.hpp"
-#include <vector>
-#include <string>
-#include "yaml-cpp/yaml.h"
 #include "rclcpp/rclcpp.hpp"
+#include "types.hpp"
+#include "yaml-cpp/yaml.h"
 #include <memory>
+#include <string>
+#include <vector>
 
 using namespace std;
 using namespace YAML;
@@ -14,7 +14,9 @@ using namespace YAML;
 class ConfigElement
 {
 public:
-    ConfigElement(Node node) : node(node), type(node.Type())
+    ConfigElement(Node node)
+        : node(node)
+        , type(node.Type())
     {
     }
 
@@ -41,13 +43,8 @@ public:
         }
         return this->node[i];
     }
-    template < typename T>
-    inline T getElement(string elementName)
-    {
-        return this->node[elementName].as<T>();
-    };
-    template < typename T>
-    inline bool getElement(T* res, string elementName)
+    template <typename T> inline T getElement(string elementName) { return this->node[elementName].as<T>(); };
+    template <typename T> inline bool getElement(T* res, string elementName)
     {
         *res = this->node[elementName].as<T>();
         return true;
@@ -56,16 +53,15 @@ public:
 protected:
     Node node;
     NodeType::value type;
-
 };
-
 
 class Config : public ConfigElement
 {
 public:
-    Config(string path) : ConfigElement(LoadFile(path))
+    Config(string path)
+        : ConfigElement(LoadFile(path))
     {
     }
 };
 
-#endif //CONFIGPARSER_HPP
+#endif // CONFIGPARSER_HPP

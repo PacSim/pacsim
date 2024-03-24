@@ -3,38 +3,40 @@
 
 #include <queue>
 
-template <typename T>
-class SensorBase {
-   public:
-      double getRate() {return this->rate;}
+template <typename T> class SensorBase
+{
+public:
+    double getRate() { return this->rate; }
 
-      T getOldest() {
+    T getOldest()
+    {
         T elem = this->deadTimeQueue.front();
         this->deadTimeQueue.pop();
         return elem;
-      }
+    }
 
-      bool availableDeadTime(double time) {
-        if(this->deadTimeQueue.size() >= 1) {
-          T elem = this->deadTimeQueue.front();
-          if (time >= (elem.timestamp+this->deadTime)) {
-            return true;
-          }
+    bool availableDeadTime(double time)
+    {
+        if (this->deadTimeQueue.size() >= 1)
+        {
+            T elem = this->deadTimeQueue.front();
+            if (time >= (elem.timestamp + this->deadTime))
+            {
+                return true;
+            }
         }
         return false;
-      }
+    }
 
-      bool sampleReady(double time) {
-        return (time >= (this->lastSampleTime+1/this->rate));
-      }
+    bool sampleReady(double time) { return (time >= (this->lastSampleTime + 1 / this->rate)); }
 
-      void registerSampling() {
-        this->lastSampleTime += 1.0/this->rate;
+    void registerSampling()
+    {
+        this->lastSampleTime += 1.0 / this->rate;
         return;
-      }
+    }
 
-
-   protected:
+protected:
     Eigen::Vector3d position;
     Eigen::Vector3d orientation;
 

@@ -112,8 +112,7 @@ pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
     return lmsMsg;
 }
 
-sensor_msgs::msg::Imu createRosImuMsg(
-    const ImuData& data)
+sensor_msgs::msg::Imu createRosImuMsg(const ImuData& data)
 {
     sensor_msgs::msg::Imu imuMsg;
     imuMsg.linear_acceleration.x = data.acc.x();
@@ -127,10 +126,11 @@ sensor_msgs::msg::Imu createRosImuMsg(
     imuMsg.orientation_covariance[0] = -1;
     for (int i = 0; i < 3; ++i)
     {
-      for (int j = 0; j < 3; ++j) {
-          imuMsg.angular_velocity_covariance[j+i*3] = data.rot_cov(i,j);
-          imuMsg.linear_acceleration_covariance[j+i*3] = data.acc_cov(i,j);
-      }
+        for (int j = 0; j < 3; ++j)
+        {
+            imuMsg.angular_velocity_covariance[j + i * 3] = data.rot_cov(i, j);
+            imuMsg.linear_acceleration_covariance[j + i * 3] = data.acc_cov(i, j);
+        }
     }
 
     imuMsg.header.stamp = rclcpp::Time(static_cast<uint64_t>(data.timestamp * 1e9));

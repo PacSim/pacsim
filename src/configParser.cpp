@@ -1,17 +1,8 @@
 #include "configParser.hpp"
 
+NodeType::value ConfigElement::getType() { return this->type; }
 
-NodeType::value ConfigElement::getType()
-{
-    return this->type;
-}
-
-
-Node ConfigElement::getNode()
-{
-    return this->node;
-}
-
+Node ConfigElement::getNode() { return this->node; }
 
 vector<ConfigElement> ConfigElement::getElements()
 {
@@ -29,7 +20,6 @@ vector<ConfigElement> ConfigElement::getElements()
     return res;
 }
 
-
 ConfigElement ConfigElement::getElement(string elementName)
 {
     if (this->type != NodeType::Map)
@@ -44,7 +34,6 @@ ConfigElement ConfigElement::getElement(string elementName)
     return this->node[elementName];
 }
 
-
 bool ConfigElement::hasElement(string elementName)
 {
     if (this->type != NodeType::Map && this->type != NodeType::Scalar)
@@ -58,7 +47,6 @@ bool ConfigElement::hasElement(string elementName)
     return true;
 }
 
-
 bool ConfigElement::getElement(ConfigElement* element, string elementName)
 {
     if (this->type != NodeType::Map && this->type != NodeType::Scalar)
@@ -68,7 +56,6 @@ bool ConfigElement::getElement(ConfigElement* element, string elementName)
     *element = this->node[elementName];
     return true;
 }
-
 
 bool ConfigElement::getElements(vector<ConfigElement>* vec)
 {
@@ -82,6 +69,4 @@ bool ConfigElement::getElements(vector<ConfigElement>* vec)
         vec->push_back(ConfigElement(child));
     }
     return true;
-
 }
-

@@ -1,14 +1,15 @@
 #ifndef SCALARVALUESENSOR_HPP
 #define SCALARVALUESENSOR_HPP
 
-#include "types.hpp"
 #include "configParser.hpp"
-#include <queue>
 #include "sensorBase.hpp"
+#include "types.hpp"
+#include <queue>
 #include <random>
 
-class ScalarValueSensor : public SensorBase<StampedScalar>{
-  public:
+class ScalarValueSensor : public SensorBase<StampedScalar>
+{
+public:
     ScalarValueSensor(double rate, double deadTime);
 
     void readConfig(ConfigElement& config);
