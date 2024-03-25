@@ -16,7 +16,7 @@ PacSim (Planning and Controls Simuluator) is a simulator for Formula Student Dri
   * Converter from [FSSIM](https://github.com/AMZ-Driverless/fssim) sdf to our track format.
 
 # Prerequisites
-The system is developed and tested on Ubuntu 22.04 with ROS2 Iron. 
+This package is developed and tested on Ubuntu 22.04 with ROS2 Iron. 
 
 Install dependencies:
 
