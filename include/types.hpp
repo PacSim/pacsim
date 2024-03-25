@@ -130,4 +130,17 @@ struct Report
     std::vector<Penalty> penalties;
 };
 
+struct mainConfig
+{
+    double timeout_start;
+    double timout_acceleration;
+    double timeout_autocross;
+    double timeout_skidpad;
+    double timeout_total;
+    bool oc_detect;
+    bool doo_detect;
+    bool uss_detect;
+    bool finish_validate;
+};
+
 #endif /* PACSIMTYPES_HPP */
