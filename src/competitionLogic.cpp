@@ -608,7 +608,9 @@ bool CompetitionLogic::checkUSS(Track track, double time, Eigen::Vector3d positi
                         track.time_keeping_gates[0].second.position.head(2), position.head(2))
                     >= 30.0);
         }
-        if (!ussTriggered && discipline == Discipline::TRACKDRIVE)
+        // a bit simplified because a few seconds can pass between passing line and standing in finish area
+        ret = ret || ((time - finishConditionsMetFirstTime) >= (30 + 3));
+        if (!ussTriggered && ret && discipline == Discipline::TRACKDRIVE)
         {
             Penalty p;
             p.lap = lapTimes.size();
@@ -617,8 +619,6 @@ bool CompetitionLogic::checkUSS(Track track, double time, Eigen::Vector3d positi
             p.time = 10.0;
             penalties.push_back(p);
         }
-        // a bit simplified because a few seconds can pass between passing line and standing in finish area
-        ret = ret || ((time - finishConditionsMetFirstTime) >= (30 + 3));
     }
 
     return ret;
@@ -663,7 +663,7 @@ bool CompetitionLogic::performAllChecks(
     evaluateOffCourse(track, time, position, orientation);
     evaluateTimeKeepings(track, position, orientation, time);
     checkFinishConditionsMet(time);
-    checkUSS(track, time, position);
+    ussTriggered = ussTriggered || checkUSS(track, time, position);
     evaluateConeHit(track, time, position, orientation);
     bool ret = checkDNF(track, time, position);
     ret = ret || finishSignal;
