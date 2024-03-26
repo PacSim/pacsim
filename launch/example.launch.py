@@ -4,6 +4,9 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import Command
+from launch.event_handlers import OnProcessExit
+from launch.actions import RegisterEventHandler, LogInfo, EmitEvent
+from launch.events import Shutdown
 
 def getFullFilePath(name, dir):
     ret = os.path.join(
@@ -34,6 +37,16 @@ def generate_launch_description():
                         {"sensors_config_path" : getFullFilePath("sensors.yaml", dir="config")}, {"vehicle_model_config_path" : getFullFilePath("vehicleModel.yaml", dir="config")}, {"discipline" : discipline}],
           output="screen",
           emulate_tty=True)
+  nodePacsimShutdownEventHandler = RegisterEventHandler(
+        OnProcessExit(
+            target_action=nodePacsim,
+            on_exit=[
+                LogInfo(msg=('Pacsim closed')),
+                EmitEvent(event=Shutdown(
+                    reason='Pacsim closed, shutdown whole launchfile')),
+            ]
+        )
+  )
   robot_state_publisher= Node(
           package='robot_state_publisher',
           executable='robot_state_publisher',
@@ -43,4 +56,4 @@ def generate_launch_description():
                       'robot_description': Command(['xacro',' ',xacro_path])
                       }],
           arguments=[xacro_path])
-  return LaunchDescription([nodePacsim, robot_state_publisher])
+  return LaunchDescription([nodePacsim, nodePacsimShutdownEventHandler, robot_state_publisher])
