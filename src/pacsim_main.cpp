@@ -289,6 +289,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     }
     Report report;
     cl->fillReport(report, simTime);
+    report.track_name = trackName;
     reportToFile(report, report_file_dir);
     executor->cancel();
     return 0;
