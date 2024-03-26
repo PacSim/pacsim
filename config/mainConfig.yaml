@@ -1,8 +1,8 @@
 pacsim:
   timeouts:
     start: 60 # time to trigger first timekeeping gate
-    acceleration: 60
-    autocross: 300 # also first lap trackdrive
+    acceleration: 25
+    autocross: 300
     skidpad: 90
     trackdrive_first: 300
     trackdrive_total: 1000

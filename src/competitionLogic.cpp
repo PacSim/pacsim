@@ -9,6 +9,8 @@ CompetitionLogic::CompetitionLogic(Track& track, MainConfig config)
     currentSectorTimes = std::vector<double>();
     sectorTimes = std::vector<std::vector<double>>();
 
+    started = false;
+    startedTime = 0;
     lapCount = 0;
     lastTriggerTime = 0;
     discipline = config.discipline;
@@ -461,10 +463,16 @@ void CompetitionLogic::evaluateTimeKeepingGateTrigger(Track track, double time, 
     // start/finish
     if (i == 0)
     {
+        if (!started)
+        {
+            startedTime = time;
+        }
+        started = true;
         if (triggerTimes[i].size() >= 1)
         {
             double timeDiff = time - triggerTimes[0][triggerTimes[0].size() - 1];
             lapTimes.push_back(timeDiff);
+            lapCount = lapTimes.size();
             sectorTimes.push_back(currentSectorTimes);
             currentSectorTimes.clear();
         }
@@ -614,6 +622,7 @@ bool CompetitionLogic::checkUSS(Track track, double time, Eigen::Vector3d positi
 
 bool CompetitionLogic::checkDNF(Track track, double time, Eigen::Vector3d position)
 {
+    // TODO: check for shortcut
     bool ret = false;
     if (discipline != Discipline::TRACKDRIVE)
     {
@@ -638,10 +647,64 @@ bool CompetitionLogic::checkDNF(Track track, double time, Eigen::Vector3d positi
             dnf_reason = "OC";
         }
     }
-    // TODO timeout case
+    ret = ret || checkTimeout(time);
     // TODO skidpad wrong circle
     isDNF = isDNF || ret;
     return isDNF;
+}
+
+bool CompetitionLogic::checkTimeout(double time)
+{
+    bool ret = false;
+    if (!finishConditionsMet)
+    {
+        if (!started && (time > timeout_start))
+        {
+            ret = true;
+        }
+        if (started)
+        {
+            double timePassed = time - startedTime;
+            if (discipline == Discipline::AUTOCROSS)
+            {
+                if (timePassed > timeout_autocross)
+                {
+                    ret = true;
+                }
+            }
+            // TODO: rule D 2.7.4, consider track length
+            else if (discipline == Discipline::TRACKDRIVE)
+            {
+                if ((lapCount == 0) && timePassed > timeout_trackdrive_first)
+                {
+                    ret = true;
+                }
+                if ((lapCount >= 0) && timePassed > timeout_trackdrive_total)
+                {
+                    ret = true;
+                }
+            }
+            else if (discipline == Discipline::ACCELERATION)
+            {
+                if (timePassed > timeout_acceleration)
+                {
+                    ret = true;
+                }
+            }
+            else if (discipline == Discipline::SKIDPAD)
+            {
+                if (timePassed > timeout_skidpad)
+                {
+                    ret = true;
+                }
+            }
+        }
+        if (ret)
+        {
+            dnf_reason = "TIMEOUT";
+        }
+    }
+    return ret;
 }
 
 bool CompetitionLogic::performAllChecks(

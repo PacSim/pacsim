@@ -70,12 +70,16 @@ private:
 
     std::string penalty2str(PENALTY_TYPE p);
 
+    bool checkTimeout(double time);
+
     std::vector<int> timeKeepingStatuses;
 
     std::vector<int> timeKeepingFirstTriggerStatuses;
 
     std::vector<std::vector<double>> triggerTimes;
 
+    bool started;
+    double startedTime;
     int lapCount;
 
     double lastTriggerTime;
