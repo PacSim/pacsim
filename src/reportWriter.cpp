@@ -37,7 +37,7 @@ bool reportToFile(Report report, std::string dir)
     out << YAML::Key << "success";
     out << YAML::Value << report.success;
     out << YAML::Key << "reason";
-    out << YAML::Value << report.reason;
+    out << YAML::Value << report.dnf_reason;
     out << YAML::Key << "final_time";
     out << YAML::Value << report.final_time;
     out << YAML::Key << "final_time_raw";

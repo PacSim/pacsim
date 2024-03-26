@@ -99,7 +99,7 @@ struct Report
 
     std::string discipline = "";
     bool success;
-    std::string reason = "";
+    std::string dnf_reason = "";
     double final_time = 0.0;
     double final_time_raw = 0.0;
     double total_sim_time = 0.0;
@@ -130,17 +130,29 @@ struct Report
     std::vector<Penalty> penalties;
 };
 
-struct mainConfig
+enum Discipline
+{
+    AUTOCROSS,
+    TRACKDRIVE,
+    ACCELERATION,
+    SKIDPAD
+};
+
+struct MainConfig
 {
     double timeout_start;
-    double timout_acceleration;
+    double timeout_acceleration;
     double timeout_autocross;
     double timeout_skidpad;
-    double timeout_total;
+    double timeout_trackdrive_first;
+    double timeout_trackdrive_total;
     bool oc_detect;
     bool doo_detect;
     bool uss_detect;
     bool finish_validate;
+    Discipline discipline;
 };
+
+Discipline stringToDiscipline(const std::string& disciplineStr);
 
 #endif /* PACSIMTYPES_HPP */

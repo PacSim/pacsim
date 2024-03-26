@@ -78,6 +78,7 @@ std::mutex mutexSimTime;
 std::string trackName;
 std::string trackFrame;
 std::string report_file_dir;
+std::string main_config_path;
 std::string perception_config_path;
 std::string sensors_config_path;
 std::string vehicle_model_config_path;
@@ -85,6 +86,7 @@ std::string discipline;
 std::vector<std::string> jointNames
     = { "FL_steer", "FL_rotate", "FR_steer", "FR_rotate", "RR_rotate", "RL_rotate", "steering" };
 double realtimeRatio = 1.0;
+MainConfig mainConfig;
 std::vector<std::shared_ptr<PerceptionSensor>> perceptionSensors;
 std::vector<std::shared_ptr<ImuSensor>> imus;
 std::shared_ptr<CompetitionLogic> cl;
@@ -132,7 +134,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
 
     auto nextLoopTime = std::chrono::steady_clock::now();
 
-    cl = std::make_shared<CompetitionLogic>(lms, discipline);
+    cl = std::make_shared<CompetitionLogic>(lms, mainConfig);
     bool finish = false;
     while (rclcpp::ok() && !(finish))
     {
@@ -326,12 +328,19 @@ void cbWheelspeeds(const pacsim::msg::Wheels& msg)
     deadTimeWspdSetpoints.addVal(w, simTime);
 }
 
+void cbFinishSignal(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
+    std::shared_ptr<std_srvs::srv::Empty::Response> response)
+{
+    cl->setFinish(true);
+}
+
 void getRos2Params(rclcpp::Node::SharedPtr& node)
 {
     std::vector<std::pair<std::string, std::string*>> params;
     params.push_back({ "track_name", &trackName });
     params.push_back({ "track_frame", &trackFrame });
     params.push_back({ "report_file_dir", &report_file_dir });
+    params.push_back({ "main_config_path", &main_config_path });
     params.push_back({ "perception_config_path", &perception_config_path });
     params.push_back({ "sensors_config_path", &sensors_config_path });
     params.push_back({ "vehicle_model_config_path", &vehicle_model_config_path });
@@ -391,10 +400,25 @@ void initSensors()
     torquesSensor->readConfig(torquesConfig);
 }
 
-void cbFinishSignal(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
-    std::shared_ptr<std_srvs::srv::Empty::Response> response)
+MainConfig fillMainConfig(std::string path)
 {
-    cl->setFinish(true);
+    MainConfig ret;
+    Config cfg(path);
+    ConfigElement config = cfg.getElement("pacsim");
+    config["timeouts"].getElement<double>(&ret.timeout_start, "start");
+    config["timeouts"].getElement<double>(&ret.timeout_acceleration, "acceleration");
+    config["timeouts"].getElement<double>(&ret.timeout_autocross, "autocross");
+    config["timeouts"].getElement<double>(&ret.timeout_skidpad, "skidpad");
+    config["timeouts"].getElement<double>(&ret.timeout_trackdrive_first, "trackdrive_first");
+    config["timeouts"].getElement<double>(&ret.timeout_trackdrive_total, "trackdrive_total");
+
+    config.getElement<bool>(&ret.oc_detect, "oc_detect");
+    config.getElement<bool>(&ret.doo_detect, "doo_detect");
+    config.getElement<bool>(&ret.uss_detect, "uss_detect");
+    config.getElement<bool>(&ret.finish_validate, "finish_validate");
+
+    ret.discipline = stringToDiscipline(discipline);
+    return ret;
 }
 
 int main(int argc, char** argv)
@@ -420,6 +444,7 @@ int main(int argc, char** argv)
     auto finishSignalServer = node->create_service<std_srvs::srv::Empty>("/pacsim/finish_signal", cbFinishSignal);
 
     getRos2Params(node);
+    mainConfig = fillMainConfig(main_config_path);
     initPerceptionSensors();
     initSensors();
     for (auto& i : perceptionSensors)

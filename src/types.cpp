@@ -24,3 +24,25 @@ Track lmListToTrack(LandmarkList& in)
     }
     return ret;
 }
+
+Discipline stringToDiscipline(const std::string& disciplineStr)
+{
+    Discipline discipline = Discipline::AUTOCROSS;
+    if (disciplineStr == "autocross")
+    {
+        discipline = Discipline::AUTOCROSS;
+    }
+    else if (disciplineStr == "trackdrive")
+    {
+        discipline = Discipline::TRACKDRIVE;
+    }
+    else if (disciplineStr == "acceleration")
+    {
+        discipline = Discipline::ACCELERATION;
+    }
+    else if (disciplineStr == "skidpad")
+    {
+        discipline = Discipline::SKIDPAD;
+    }
+    return discipline;
+}

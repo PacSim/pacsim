@@ -5,13 +5,6 @@
 class CompetitionLogic
 {
 public:
-    enum Discipline
-    {
-        AUTOCROSS,
-        TRACKDRIVE,
-        ACCELERATION,
-        SKIDPAD
-    };
     enum PENALTY_TYPE
     {
         DOO,
@@ -28,7 +21,7 @@ public:
         Eigen::Vector3d position;
     };
 
-    CompetitionLogic(Track& track, std::string disciplineStr);
+    CompetitionLogic(Track& track, MainConfig config);
 
     bool evaluateOffCourse(Track& track, double time, Eigen::Vector3d& position, Eigen::Vector3d& orientation);
 
@@ -100,6 +93,10 @@ private:
     std::vector<Penalty> penalties;
     bool ussTriggered;
     bool finishSignal;
-    double timeout_first_lap;
-    double timeout_total;
+    double timeout_start;
+    double timeout_acceleration;
+    double timeout_autocross;
+    double timeout_skidpad;
+    double timeout_trackdrive_first;
+    double timeout_trackdrive_total;
 };

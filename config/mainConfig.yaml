@@ -3,8 +3,9 @@ pacsim:
     start: 60 # time to trigger first timekeeping gate
     acceleration: 60
     autocross: 300 # also first lap trackdrive
-    skidpad: 20
-    total: 1000
+    skidpad: 90
+    trackdrive_first: 300
+    trackdrive_total: 1000
   oc_detect: true
   doo_detect: true
   uss_detect: true

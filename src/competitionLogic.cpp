@@ -1,6 +1,6 @@
 #include "competitionLogic.hpp"
 
-CompetitionLogic::CompetitionLogic(Track& track, std::string disciplineStr)
+CompetitionLogic::CompetitionLogic(Track& track, MainConfig config)
 {
     timeKeepingStatuses = std::vector<int>(track.time_keeping_gates.size(), 0);
     timeKeepingFirstTriggerStatuses = std::vector<int>(track.time_keeping_gates.size(), 0);
@@ -11,23 +11,7 @@ CompetitionLogic::CompetitionLogic(Track& track, std::string disciplineStr)
 
     lapCount = 0;
     lastTriggerTime = 0;
-    discipline = Discipline::AUTOCROSS;
-    if (disciplineStr == "autocross")
-    {
-        discipline = Discipline::AUTOCROSS;
-    }
-    else if (disciplineStr == "trackdrive")
-    {
-        discipline = Discipline::TRACKDRIVE;
-    }
-    else if (disciplineStr == "acceleration")
-    {
-        discipline = Discipline::ACCELERATION;
-    }
-    else if (disciplineStr == "skidpad")
-    {
-        discipline = Discipline::SKIDPAD;
-    }
+    discipline = config.discipline;
     finishConditionsMetFirstTime = 0.0;
     finishConditionsMet = false;
     alreadyOC = false;
@@ -37,8 +21,12 @@ CompetitionLogic::CompetitionLogic(Track& track, std::string disciplineStr)
     penalties = std::vector<Penalty>();
     ussTriggered = false;
     finishSignal = false;
-    timeout_first_lap = 300.0;
-    timeout_total = 1000.0;
+    timeout_start = config.timeout_start;
+    timeout_acceleration = config.timeout_acceleration;
+    timeout_autocross = config.timeout_autocross;
+    timeout_skidpad = config.timeout_skidpad;
+    timeout_trackdrive_first = config.timeout_trackdrive_first;
+    timeout_trackdrive_total = config.timeout_trackdrive_total;
 }
 
 bool CompetitionLogic::pointInTriangle(Eigen::Vector2d a, Eigen::Vector2d b, Eigen::Vector2d c, Eigen::Vector2d point)
@@ -720,10 +708,32 @@ void CompetitionLogic::fillReport(Report& report, double time)
 {
     report.discipline = discipline2str(discipline);
     report.success = (!isDNF) && (finishSignal && checkFinishConditionsMet(time));
+    report.dnf_reason = dnf_reason;
     report.total_sim_time = time;
     report.final_time_raw = 0;
-    report.timeout_first_lap = timeout_first_lap;
-    report.timeout_total = timeout_total;
+    report.timeout_first_lap = 0;
+    report.timeout_total = 0;
+    if (discipline == Discipline::AUTOCROSS)
+    {
+        report.timeout_total = timeout_autocross;
+        report.timeout_first_lap = report.timeout_total;
+    }
+    else if (discipline == Discipline::TRACKDRIVE)
+    {
+        report.timeout_total = timeout_trackdrive_total;
+        report.timeout_first_lap = timeout_trackdrive_first;
+    }
+    else if (discipline == Discipline::ACCELERATION)
+    {
+        report.timeout_total = timeout_acceleration;
+        report.timeout_first_lap = report.timeout_total;
+    }
+    else if (discipline == Discipline::SKIDPAD)
+    {
+        report.timeout_total = timeout_skidpad;
+        report.timeout_first_lap = report.timeout_total;
+    }
+
     report.off_course_detect = true;
     report.cone_hit_detect = true;
     report.uss_detect = true;
