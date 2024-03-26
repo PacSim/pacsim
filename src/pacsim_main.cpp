@@ -44,6 +44,7 @@
 #include "reportWriter.hpp"
 
 // DynamicDoubleTrackModel7Dof model;
+std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor;
 std::shared_ptr<IVehicleModel> model;
 std::string mapFilePrefix;
 double simTime = 0.0;
@@ -289,6 +290,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     Report report;
     cl->fillReport(report, simTime);
     reportToFile(report, report_file_dir);
+    executor->cancel();
     return 0;
 }
 
@@ -480,7 +482,9 @@ int main(int argc, char** argv)
 
     std::thread mainLoopThread(threadMainLoopFunc, std::ref(node));
     RCLCPP_INFO_STREAM(node->get_logger(), "Started pacsim");
-    rclcpp::spin(node);
+    executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    executor->add_node(node);
+    executor->spin();
 
     mainLoopThread.join();
 
