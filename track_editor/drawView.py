@@ -63,6 +63,9 @@ class ConeItem(QtWidgets.QGraphicsPixmapItem):
         self.setSelected(False)
         self.setShapeMode(QtWidgets.QGraphicsPixmapItem.ShapeMode.BoundingRectShape)
 
+    def setMovable(self, val):
+        self.setFlag(self.ItemIsMovable, enabled=val)
+
     def itemChange(self, change , value):
 
         if change == self.ItemPositionChange and self.scene():
@@ -255,6 +258,8 @@ class drawView(QGraphicsView):
           self.currentMouseButton = mouseButton
           if(event.modifiers() == QtCore.Qt.ControlModifier):
               self.rubberBandUse = True
+              for c in self.coneMap:
+                 c.setMovable(False)
               if not self.rubberBand:
                   self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
               self.rubberBand.setGeometry(QRect(self.originRB, QSize()))
@@ -443,6 +448,8 @@ class drawView(QGraphicsView):
             for i in scene.items(minX, minY, maxX-minX, maxY-minY, Qt.IntersectsItemBoundingRect, Qt.AscendingOrder):
                 i.setSelected(True)
         self.rubberBandUse = False
+        for c in self.coneMap:
+            c.setMovable(True)
         self.releasedShiftKlick = True
         self.updateLMPositionDisplay()
     # def mousePos()
