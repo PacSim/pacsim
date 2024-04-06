@@ -250,9 +250,6 @@ class drawView(QGraphicsView):
         mouseButton = event.button()
         self.updateLaneLines()
         if(self.guiLogic.editorMode == guiLogic.editorMode.ADD or self.guiLogic.editorMode == guiLogic.editorMode.TIMEKEEPING_START):
-          if(self.rubberBandUsed):
-              self.rubberBandUsed = False
-              return
           self.originRB = event.pos()
           self.rubberBandStart = self.mapToScene(event.pos())
           self.currentMouseButton = mouseButton
@@ -266,7 +263,6 @@ class drawView(QGraphicsView):
               self.rubberBand.show()
 
           elif(event.modifiers() == QtCore.Qt.NoModifier):
-
               anySelected = False
               for i in self.items():
                   anySelected = anySelected or i.isSelected()
@@ -275,7 +271,12 @@ class drawView(QGraphicsView):
                   numberUnderMouse = numberUnderMouse + int(i.isUnderMouse())
               anyUnderMouse = (numberUnderMouse >= 1)
               # left
-              if(mouseButton == 1):
+              if(mouseButton == Qt.MouseButton.LeftButton):
+                  if(self.rubberBandUsed):
+                    self.rubberBandUsed = False
+                    for c in self.coneMap:
+                        c.setSelected(False)
+                    return
                   if(self.guiLogic.editorMode == guiLogic.editorMode.ADD):
                     if(not anySelected):
                         if(self.guiLogic.landmarkType == guiLogic.landmarkType.UNDEFINED):
@@ -333,7 +334,7 @@ class drawView(QGraphicsView):
                         self.guiLogic.timeKeepingGates.append([cone])
 
               # right
-              elif(mouseButton == 2):
+              elif(mouseButton == Qt.MouseButton.RightButton):
                   if(anySelected):
                     self.rightClickMenu(self.mapToGlobal(event.pos()))
                   elif (numberUnderMouse == 1):
@@ -730,7 +731,7 @@ class drawScene(QGraphicsScene):
 
     def on_click(self, event):
         # to prevent that cones are unselected when only clicking middle button (drag view)
-        if(event.button() == Qt.MouseButton.MiddleButton):
+        if(event.button() == Qt.MouseButton.MiddleButton or event.button() == Qt.MouseButton.RightButton):
             return
         super().mousePressEvent(event)
 
