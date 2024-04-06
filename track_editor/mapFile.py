@@ -29,6 +29,8 @@ def stringToLandmarkType(string):
     return landmarkType.BIG_ORANGE
   elif(string == "timekeeping"):
     return landmarkType.TIMEKEEPING
+  elif(string == "invisible"):
+     return landmarkType.INVISIBLE
 
   return landmarkType.UNDEFINED
 
@@ -43,6 +45,8 @@ def landmarkTypeToString(type):
     return "big-orange"
   elif(type == landmarkType.TIMEKEEPING):
     return "timekeeping"
+  elif(type == landmarkType.INVISIBLE):
+    return "invisible"
   return "unknown"
 
 def writeYaml(fileName, cones, leftLane, rightLane, timeKeeping, startPose, earthToTrack):
