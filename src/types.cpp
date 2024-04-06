@@ -1,5 +1,35 @@
 #include "types.hpp"
 
+LandmarkType stringToLandmarkType(const std::string& in)
+{
+    LandmarkType ret = LandmarkType::UNKNOWN;
+    if (in == "blue")
+    {
+        ret = LandmarkType::BLUE;
+    }
+    else if (in == "yellow")
+    {
+        ret = LandmarkType::YELLOW;
+    }
+    else if (in == "small-orange" || in == "orange")
+    {
+        ret = LandmarkType::ORANGE;
+    }
+    else if (in == "big-orange")
+    {
+        ret = LandmarkType::BIG_ORANGE;
+    }
+    else if (in == "timekeeping")
+    {
+        ret = LandmarkType::TIMEKEEPING;
+    }
+    else if (in == "invisible")
+    {
+        ret = LandmarkType::INVISIBLE;
+    }
+    return ret;
+}
+
 LandmarkList trackToLMList(Track& in)
 {
     LandmarkList ret;

@@ -27,6 +27,8 @@ void addLandmarks(std::vector<Landmark>* _ret, Node* list, int* _coneCounter)
         lm.id = *_coneCounter;
         *_coneCounter++;
         lm.position = Eigen::Vector3d(vi[0], vi[1], vi[2]);
+        lm.type = stringToLandmarkType(position["class"].as<std::string>());
+        lm.typeWeights[lm.type] = 1.0;
         _ret->push_back(lm);
     }
 }
@@ -42,6 +44,8 @@ void addTimeKeepings(std::vector<std::pair<Landmark, Landmark>>* _ret, Node* lis
         lm.id = *_coneCounter;
         *_coneCounter++;
         lm.position = Eigen::Vector3d(vi[0], vi[1], vi[2]);
+        lm.type = stringToLandmarkType(position["class"].as<std::string>());
+        lm.typeWeights[lm.type] = 1.0;
         lms.push_back(lm);
     }
     for (int i = 0; i < (lms.size() / 2); ++i)

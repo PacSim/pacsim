@@ -120,7 +120,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     model->setPosition(start_position);
     model->setOrientation(start_orientation);
 
-    LandmarksMarkerWrapper mapMarkersWrapper(1.0, 0.0, 0.0, 0.3, 0.3, 0.5, 0.8, 0.15, "pacsim");
+    LandmarksMarkerWrapper mapMarkersWrapper(0.8, "pacsim");
 
     visualization_msgs::msg::MarkerArray mapMarkerMsg = mapMarkersWrapper.markerFromLMs(lms, trackFrame, 0.0);
     mapVizPub->publish(mapMarkerMsg);
@@ -452,8 +452,7 @@ int main(int argc, char** argv)
     initSensors();
     for (auto& i : perceptionSensors)
     {
-        auto detectionsMarkersWrapper = std::make_shared<LandmarksMarkerWrapper>(
-            0.0, 1.0, 0.0, 0.5, 0.5, 0.35, 0.8, 0.1, "pacsim/" + i->getName());
+        auto detectionsMarkersWrapper = std::make_shared<LandmarksMarkerWrapper>(0.8, "pacsim/" + i->getName());
         auto pub = node->create_publisher<pacsim::msg::PerceptionDetections>(
             "/pacsim/perception/" + i->getName() + "/landmarks", 1);
         auto pubViz = node->create_publisher<visualization_msgs::msg::MarkerArray>(

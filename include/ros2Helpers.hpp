@@ -17,22 +17,14 @@
 class LandmarksMarkerWrapper
 {
 public:
-    LandmarksMarkerWrapper(double r, double g, double b, double sx, double sy, double sz, double alpha, double offsetZ,
-        std::string nameSpace);
+    LandmarksMarkerWrapper(double alpha, std::string nameSpace);
 
     visualization_msgs::msg::MarkerArray markerFromLMs(Track& in, std::string frame, double time);
 
     visualization_msgs::msg::MarkerArray deleteAllMsg(std::string frame);
 
 private:
-    double r = 0.0;
-    double g = 1.0;
-    double b = 0.0;
-    double sx = 0.3;
-    double sy = 0.3;
-    double sz = 0.5;
     double alpha = 0.3;
-    double offsetZ = 0.1;
     std::string nameSpace = "pacsim";
     int lastMaxId;
 };

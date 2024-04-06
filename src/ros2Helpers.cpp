@@ -1,16 +1,8 @@
 #include "ros2Helpers.hpp"
 
-LandmarksMarkerWrapper::LandmarksMarkerWrapper(
-    double r, double g, double b, double sx, double sy, double sz, double alpha, double offsetZ, std::string nameSpace)
+LandmarksMarkerWrapper::LandmarksMarkerWrapper(double alpha, std::string nameSpace)
 {
-    this->r = r;
-    this->g = g;
-    this->b = b;
-    this->sx = sx;
-    this->sy = sy;
-    this->sz = sz;
     this->alpha = alpha;
-    this->offsetZ = offsetZ;
     this->nameSpace = nameSpace;
     this->lastMaxId = 0;
 }
@@ -20,7 +12,13 @@ visualization_msgs::msg::MarkerArray LandmarksMarkerWrapper::markerFromLMs(Track
     int id = 0;
     rclcpp::Time stamp = rclcpp::Time(static_cast<uint64_t>(time * 1e9));
     // TODO: no copy for lists
-    std::vector<std::vector<Landmark>> lists { in.left_lane, in.right_lane, in.unknown };
+    std::vector<Landmark> timekeepingLms;
+    for (auto& pair : in.time_keeping_gates)
+    {
+        timekeepingLms.push_back(pair.first);
+        timekeepingLms.push_back(pair.second);
+    }
+    std::vector<std::vector<Landmark>> lists { in.left_lane, in.right_lane, in.unknown, timekeepingLms };
     for (auto& list : lists)
     {
         for (Landmark lm : list)
@@ -36,21 +34,205 @@ visualization_msgs::msg::MarkerArray LandmarksMarkerWrapper::markerFromLMs(Track
             marker.action = visualization_msgs::msg::Marker::MODIFY;
             marker.pose.position.x = lm.position.x();
             marker.pose.position.y = lm.position.y();
-            marker.pose.position.z = lm.position.z() + this->offsetZ;
             marker.pose.orientation.x = 0.0;
             marker.pose.orientation.y = 0.0;
             marker.pose.orientation.z = 0.0;
             marker.pose.orientation.w = 1.0;
-            marker.scale.x = this->sx;
-            marker.scale.y = this->sy;
-            marker.scale.z = this->sz;
+            marker.scale.x = 0.228;
+            marker.scale.y = 0.228;
+            marker.scale.z = 0.325;
             marker.color.a = this->alpha;
-            marker.color.r = this->r;
-            marker.color.g = this->g;
-            marker.color.b = this->b;
+            marker.color.r = 0.0 / 255.0;
+            marker.color.g = 153.0 / 255.0;
+            marker.color.b = 51.0 / 255.0;
+            switch (lm.type)
+            {
+            case LandmarkType::BLUE:
+                marker.color.r = 51.0 / 255.0;
+                marker.color.g = 102.0 / 255.0;
+                marker.color.b = 255.0 / 255.0;
+                break;
+            case LandmarkType::YELLOW:
+                marker.color.r = 255.0 / 255.0;
+                marker.color.g = 255.0 / 255.0;
+                marker.color.b = 0.0 / 255.0;
+                break;
+            case LandmarkType::ORANGE:
+                marker.color.r = 255.0 / 255.0;
+                marker.color.g = 153.0 / 255.0;
+                marker.color.b = 0.0 / 255.0;
+                break;
+            case LandmarkType::BIG_ORANGE:
+                marker.color.r = 255.0 / 255.0;
+                marker.color.g = 153.0 / 255.0;
+                marker.color.b = 0.0 / 255.0;
+                marker.scale.x = 0.285;
+                marker.scale.y = 0.285;
+                marker.scale.z = 0.5;
+                break;
+            case LandmarkType::TIMEKEEPING:
+                marker.color.r = 204.0 / 255.0;
+                marker.color.g = 51.0 / 255.0;
+                marker.color.b = 153.0 / 255.0;
+                marker.scale.x = 0.285;
+                marker.scale.y = 0.285;
+                marker.scale.z = 0.5;
+                break;
+            case LandmarkType::INVISIBLE:
+                marker.color.r = 99.0 / 255.0;
+                marker.color.g = 100.0 / 255.0;
+                marker.color.b = 102.0 / 255.0;
+                break;
+            case LandmarkType::UNKNOWN:
+                marker.color.r = 0.0 / 255.0;
+                marker.color.g = 153.0 / 255.0;
+                marker.color.b = 51.0 / 255.0;
+                break;
+            }
+
+            marker.pose.position.z = lm.position.z() + marker.scale.z * 0.5;
             out.markers.push_back(marker);
         }
     }
+    // draw lines timekeeping
+    for (int i = 0; i < in.time_keeping_gates.size(); ++i)
+    {
+        auto line = in.time_keeping_gates[i];
+        visualization_msgs::msg::Marker marker;
+        marker.header.frame_id = frame;
+        marker.header.stamp = stamp;
+        marker.ns = this->nameSpace;
+        marker.id = id;
+        marker.frame_locked = false;
+        id += 1;
+        marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+        marker.action = visualization_msgs::msg::Marker::MODIFY;
+        geometry_msgs::msg::Point p1;
+        p1.x = line.first.position.x();
+        p1.y = line.first.position.y();
+        p1.z = line.first.position.z();
+        marker.points.push_back(p1);
+        geometry_msgs::msg::Point p2;
+        p2.x = line.second.position.x();
+        p2.y = line.second.position.y();
+        p2.z = line.second.position.z();
+        marker.points.push_back(p2);
+        marker.pose.position.x = 0.0;
+        marker.pose.position.y = 0.0;
+        marker.pose.position.z = 0.0;
+        marker.pose.orientation.x = 0.0;
+        marker.pose.orientation.y = 0.0;
+        marker.pose.orientation.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = 0.15;
+        marker.scale.y = 0.0;
+        marker.scale.z = 0.0;
+        marker.color.a = this->alpha;
+        marker.color.r = 153.0 / 255.0;
+        marker.color.g = 0.0 / 255.0;
+        marker.color.b = 153.0 / 255.0;
+        if (i == 0)
+        {
+            // green
+            marker.color.r = 0.0 / 255.0;
+            marker.color.g = 102.0 / 255.0;
+            marker.color.b = 0.0 / 255.0;
+        }
+        else if (i == 1 && (!in.lanesFirstWithLastConnected))
+        {
+            // red
+            marker.color.r = 128.0 / 255.0;
+            marker.color.g = 0.0 / 255.0;
+            marker.color.b = 0.0 / 255.0;
+        }
+        out.markers.push_back(marker);
+    }
+
+    // draw lines left lane
+    visualization_msgs::msg::Marker markerLeftLine;
+    markerLeftLine.header.frame_id = frame;
+    markerLeftLine.header.stamp = stamp;
+    markerLeftLine.ns = this->nameSpace;
+    markerLeftLine.id = id;
+    markerLeftLine.frame_locked = false;
+    id += 1;
+    markerLeftLine.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    markerLeftLine.action = visualization_msgs::msg::Marker::MODIFY;
+    markerLeftLine.pose.position.x = 0.0;
+    markerLeftLine.pose.position.y = 0.0;
+    markerLeftLine.pose.position.z = 0.0;
+    markerLeftLine.pose.orientation.x = 0.0;
+    markerLeftLine.pose.orientation.y = 0.0;
+    markerLeftLine.pose.orientation.z = 0.0;
+    markerLeftLine.pose.orientation.w = 1.0;
+    markerLeftLine.scale.x = 0.05;
+    markerLeftLine.scale.y = 0.0;
+    markerLeftLine.scale.z = 0.0;
+    markerLeftLine.color.a = this->alpha;
+    markerLeftLine.color.r = 51.0 / 255.0;
+    markerLeftLine.color.g = 102.0 / 255.0;
+    markerLeftLine.color.b = 255.0 / 255.0;
+    for (auto& p : in.left_lane)
+    {
+        geometry_msgs::msg::Point point;
+        point.x = p.position.x();
+        point.y = p.position.y();
+        point.z = p.position.z() + 0.5 * markerLeftLine.scale.z;
+        markerLeftLine.points.push_back(point);
+    }
+    if (in.lanesFirstWithLastConnected && (in.left_lane.size() >= 1))
+    {
+        geometry_msgs::msg::Point point;
+        auto p = in.left_lane[0];
+        point.x = p.position.x();
+        point.y = p.position.y();
+        point.z = p.position.z() + 0.5 * markerLeftLine.scale.z;
+        markerLeftLine.points.push_back(point);
+    }
+    out.markers.push_back(markerLeftLine);
+
+    // draw lines right lane
+    visualization_msgs::msg::Marker markerRightLane;
+    markerRightLane.header.frame_id = frame;
+    markerRightLane.header.stamp = stamp;
+    markerRightLane.ns = this->nameSpace;
+    markerRightLane.id = id;
+    markerRightLane.frame_locked = false;
+    id += 1;
+    markerRightLane.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    markerRightLane.action = visualization_msgs::msg::Marker::MODIFY;
+    markerRightLane.pose.position.x = 0.0;
+    markerRightLane.pose.position.y = 0.0;
+    markerRightLane.pose.position.z = 0.0;
+    markerRightLane.pose.orientation.x = 0.0;
+    markerRightLane.pose.orientation.y = 0.0;
+    markerRightLane.pose.orientation.z = 0.0;
+    markerRightLane.pose.orientation.w = 1.0;
+    markerRightLane.scale.x = 0.05;
+    markerRightLane.scale.y = 0.0;
+    markerRightLane.scale.z = 0.0;
+    markerRightLane.color.a = this->alpha;
+    markerRightLane.color.r = 255.0 / 255.0;
+    markerRightLane.color.g = 255.0 / 255.0;
+    markerRightLane.color.b = 0.0 / 255.0;
+    for (auto& p : in.right_lane)
+    {
+        geometry_msgs::msg::Point point;
+        point.x = p.position.x();
+        point.y = p.position.y();
+        point.z = p.position.z() + 0.5 * markerRightLane.scale.z;
+        markerRightLane.points.push_back(point);
+    }
+    if (in.lanesFirstWithLastConnected && (in.right_lane.size() >= 1))
+    {
+        geometry_msgs::msg::Point point;
+        auto p = in.right_lane[0];
+        point.x = p.position.x();
+        point.y = p.position.y();
+        point.z = p.position.z() + 0.5 * markerRightLane.scale.z;
+        markerRightLane.points.push_back(point);
+    }
+    out.markers.push_back(markerRightLane);
 
     for (int i = id; i < lastMaxId; ++i)
     {

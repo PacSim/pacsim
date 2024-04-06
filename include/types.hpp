@@ -4,6 +4,20 @@
 #include <Eigen/Core>
 #include <vector>
 
+enum LandmarkType
+{
+    BLUE = 0,
+    YELLOW = 1,
+    ORANGE = 2,
+    BIG_ORANGE = 3,
+    TIMEKEEPING = 4,
+    INVISIBLE = 5,
+    // convention: unknown is last element, that way we know the number of classes
+    UNKNOWN = 6
+};
+
+LandmarkType stringToLandmarkType(const std::string& in);
+
 // data structure to store everything for each Landmark (without color probabilities)
 struct Landmark
 {
@@ -11,6 +25,8 @@ struct Landmark
     Eigen::Vector3d position;
     Eigen::Matrix3d cov;
     bool beenHit = false;
+    LandmarkType type;
+    double typeWeights[LandmarkType::UNKNOWN + 1] = { 0.0 };
     // ColorWeight weights;
 
     // double absolute_liveness;
