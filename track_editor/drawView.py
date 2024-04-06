@@ -155,13 +155,13 @@ class drawView(QGraphicsView):
             anySelected = anySelected or i.isSelected()
         if (anySelected):
           menu = QMenu()
-          deleteAction = menu.addAction("&Delete")
           submenuType = menu.addMenu("Change color")
           blueAction = submenuType.addAction("Blue")
           yellowAction = submenuType.addAction("Yellow")
           orangeAction = submenuType.addAction("Orange")
           bigOrangeAction = submenuType.addAction("Big orange")
           unknownAction = submenuType.addAction("Unknown")
+          deleteAction = menu.addAction("&Delete")
           # action = menu.exec_(self.mapToGlobal(event.pos()))
           action = menu.exec_(pos)
           if action == deleteAction:
