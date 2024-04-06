@@ -40,7 +40,7 @@ LandmarkList transformLmList(LandmarkList& in, Eigen::Vector3d trans, Eigen::Vec
     LandmarkList out;
     for (auto& lm : in.list)
     {
-        Landmark temp;
+        Landmark temp = lm;
         temp.position = rotationMatrix * lm.position;
         temp.position += transInverse;
         temp.id = lm.id;

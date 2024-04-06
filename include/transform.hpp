@@ -3,6 +3,7 @@
 
 #include "types.hpp"
 #include <Eigen/Dense>
+#include <iostream>
 
 Eigen::Vector3d rigidBodyVelocity(Eigen::Vector3d v, Eigen::Vector3d r, Eigen::Vector3d omega);
 

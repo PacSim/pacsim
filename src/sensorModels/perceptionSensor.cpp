@@ -126,6 +126,9 @@ LandmarkList PerceptionSensor::process(LandmarkList& in, Eigen::Vector3d& trans,
     LandmarkList transformedLmsVehicle = transformLmList(in, trans, rot);
     LandmarkList transformedLms = transformLmList(transformedLmsVehicle, this->position, this->orientation);
     std::vector<Landmark> listNew = this->filterFoV(transformedLms.list);
+    listNew = this->filterTypeAndDOO(listNew);
+    listNew = this->handleFalsePositivesAndNegatives(listNew);
+    listNew = this->addClassProbailities(listNew);
     listNew = this->addNoise(listNew);
     LandmarkList ret;
     ret.list = listNew;
@@ -148,6 +151,19 @@ std::vector<Landmark> PerceptionSensor::filterFoV(std::vector<Landmark>& in)
         //     angleVertical <= maxAngleVertical)
         if (dist >= minRange && dist <= maxRange && angleHorizontal >= minAngleHorizontal
             && angleHorizontal <= maxAngleHorizontal)
+        {
+            listNew.push_back(lm);
+        }
+    }
+    return listNew;
+}
+
+std::vector<Landmark> PerceptionSensor::filterTypeAndDOO(std::vector<Landmark>& in)
+{
+    std::vector<Landmark> listNew;
+    for (Landmark& lm : in)
+    {
+        if (lm.type != LandmarkType::INVISIBLE && (!lm.beenHit))
         {
             listNew.push_back(lm);
         }
@@ -216,6 +232,31 @@ std::vector<Landmark> PerceptionSensor::addNoise(std::vector<Landmark>& in)
         lm.cov(1, 1) += errorSigmaXYZ.y() * errorSigmaXYZ.y();
         lm.cov(2, 2) += errorSigmaXYZ.z() * errorSigmaXYZ.z();
 
+        listNew.push_back(lm);
+    }
+    return listNew;
+}
+
+std::vector<Landmark> PerceptionSensor::addClassProbailities(std::vector<Landmark>& in)
+{
+    std::vector<Landmark> listNew;
+
+    for (Landmark& lm : in)
+    {
+        std::fill(lm.typeWeights, lm.typeWeights + LandmarkType::UNKNOWN, 0);
+        lm.typeWeights[lm.type] = 1.0;
+        listNew.push_back(lm);
+    }
+    return listNew;
+}
+
+std::vector<Landmark> PerceptionSensor::handleFalsePositivesAndNegatives(std::vector<Landmark>& in)
+{
+    std::vector<Landmark> listNew;
+
+    for (Landmark& lm : in)
+    {
+        lm.detection_probability = 1.0;
         listNew.push_back(lm);
     }
     return listNew;

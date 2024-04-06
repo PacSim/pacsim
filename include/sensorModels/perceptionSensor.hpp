@@ -32,6 +32,12 @@ public:
 
     std::vector<Landmark> filterFoV(std::vector<Landmark>& in);
 
+    std::vector<Landmark> filterTypeAndDOO(std::vector<Landmark>& in);
+
+    std::vector<Landmark> addClassProbailities(std::vector<Landmark>& in);
+
+    std::vector<Landmark> handleFalsePositivesAndNegatives(std::vector<Landmark>& in);
+
     std::vector<Landmark> addNoise(std::vector<Landmark>& in);
 
     std::string getName();

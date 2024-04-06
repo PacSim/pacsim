@@ -25,16 +25,9 @@ struct Landmark
     Eigen::Vector3d position;
     Eigen::Matrix3d cov;
     bool beenHit = false;
-    LandmarkType type;
+    LandmarkType type = LandmarkType::UNKNOWN;
     double typeWeights[LandmarkType::UNKNOWN + 1] = { 0.0 };
-    // ColorWeight weights;
-
-    // double absolute_liveness;
-    // int seen_ctr;
-    // int life_time_ctr;
-
-    // double first_seen;
-    // double last_seen;
+    double detection_probability = 1.0;
 };
 
 struct Map
