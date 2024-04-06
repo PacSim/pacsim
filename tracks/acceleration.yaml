@@ -1,0 +1,167 @@
+version: 0.9
+track:
+  lanesFirstWithLastConnected: false
+  start:
+    position: [-1.98, 0.0, 0.0]
+    orientation: [0.0, 0.0, 0.0]
+  earthToTrack:
+    position: [0.0, 0.0, 0.0]
+    orientation: [0.0, 0.0, 0.0]
+  left:
+  - position: [-5.0, 1.9, 0.0]
+    class: invisible
+  - position: [0.0, 1.9, 0.0]
+    class: invisible
+  - position: [5.0, 1.9, 0.0]
+    class: blue
+  - position: [10.0, 1.9, 0.0]
+    class: blue
+  - position: [15.0, 1.9, 0.0]
+    class: blue
+  - position: [20.0, 1.9, 0.0]
+    class: blue
+  - position: [25.0, 1.9, 0.0]
+    class: blue
+  - position: [30.0, 1.9, 0.0]
+    class: blue
+  - position: [35.0, 1.9, 0.0]
+    class: blue
+  - position: [40.0, 1.9, 0.0]
+    class: blue
+  - position: [45.0, 1.9, 0.0]
+    class: blue
+  - position: [50.0, 1.9, 0.0]
+    class: blue
+  - position: [55.0, 1.9, 0.0]
+    class: blue
+  - position: [60.0, 1.9, 0.0]
+    class: blue
+  - position: [65.0, 1.9, 0.0]
+    class: blue
+  - position: [70.0, 1.9, 0.0]
+    class: blue
+  - position: [75.0, 1.9, 0.0]
+    class: invisible
+  - position: [80.0, 1.9, 0.0]
+    class: small-orange
+  - position: [85.0, 1.9, 0.0]
+    class: small-orange
+  - position: [90.0, 1.9, 0.0]
+    class: small-orange
+  - position: [95.0, 1.9, 0.0]
+    class: small-orange
+  - position: [100.0, 1.9, 0.0]
+    class: small-orange
+  - position: [105.0, 1.9, 0.0]
+    class: small-orange
+  - position: [110.0, 1.9, 0.0]
+    class: small-orange
+  - position: [115.0, 1.9, 0.0]
+    class: small-orange
+  - position: [120.0, 1.9, 0.0]
+    class: small-orange
+  - position: [125.0, 1.9, 0.0]
+    class: small-orange
+  - position: [130.0, 1.9, 0.0]
+    class: small-orange
+  - position: [135.0, 1.9, 0.0]
+    class: small-orange
+  - position: [140.0, 1.9, 0.0]
+    class: small-orange
+  - position: [145.0, 1.9, 0.0]
+    class: small-orange
+  - position: [150.0, 1.9, 0.0]
+    class: small-orange
+  right:
+  - position: [-5.0, -1.9, 0.0]
+    class: invisible
+  - position: [0.0, -1.9, 0.0]
+    class: invisible
+  - position: [5.0, -1.9, 0.0]
+    class: yellow
+  - position: [10.0, -1.9, 0.0]
+    class: yellow
+  - position: [15.0, -1.9, 0.0]
+    class: yellow
+  - position: [20.0, -1.9, 0.0]
+    class: yellow
+  - position: [25.0, -1.9, 0.0]
+    class: yellow
+  - position: [30.0, -1.9, 0.0]
+    class: yellow
+  - position: [35.0, -1.9, 0.0]
+    class: yellow
+  - position: [40.0, -1.9, 0.0]
+    class: yellow
+  - position: [45.0, -1.9, 0.0]
+    class: yellow
+  - position: [50.0, -1.9, 0.0]
+    class: yellow
+  - position: [55.0, -1.9, 0.0]
+    class: yellow
+  - position: [60.0, -1.9, 0.0]
+    class: yellow
+  - position: [65.0, -1.9, 0.0]
+    class: yellow
+  - position: [70.0, -1.9, 0.0]
+    class: yellow
+  - position: [75.0, -1.9, 0.0]
+    class: invisible
+  - position: [80.0, -1.9, 0.0]
+    class: small-orange
+  - position: [85.0, -1.9, 0.0]
+    class: small-orange
+  - position: [90.0, -1.9, 0.0]
+    class: small-orange
+  - position: [95.0, -1.9, 0.0]
+    class: small-orange
+  - position: [100.0, -1.9, 0.0]
+    class: small-orange
+  - position: [105.0, -1.9, 0.0]
+    class: small-orange
+  - position: [110.0, -1.9, 0.0]
+    class: small-orange
+  - position: [115.0, -1.9, 0.0]
+    class: small-orange
+  - position: [120.0, -1.9, 0.0]
+    class: small-orange
+  - position: [125.0, -1.9, 0.0]
+    class: small-orange
+  - position: [130.0, -1.9, 0.0]
+    class: small-orange
+  - position: [135.0, -1.9, 0.0]
+    class: small-orange
+  - position: [140.0, -1.9, 0.0]
+    class: small-orange
+  - position: [145.0, -1.9, 0.0]
+    class: small-orange
+  - position: [150.0, -1.9, 0.0]
+    class: small-orange
+  time_keeping:
+  - position: [0.0, 4.0, 0.0]
+    class: timekeeping
+  - position: [0.0, -4.0, 0.0]
+    class: timekeeping
+  - position: [75.0, 4.0, 0.0]
+    class: timekeeping
+  - position: [75.0, -4.0, 0.0]
+    class: timekeeping
+  unknown:
+  - position: [-0.3, 1.9, 0.0]
+    class: big-orange
+  - position: [-0.3, -1.9, 0.0]
+    class: big-orange
+  - position: [0.3, 1.9, 0.0]
+    class: big-orange
+  - position: [0.3, -1.9, 0.0]
+    class: big-orange
+  - position: [74.7, 1.9, 0.0]
+    class: big-orange
+  - position: [74.7, -1.9, 0.0]
+    class: big-orange
+  - position: [75.3, 1.9, 0.0]
+    class: big-orange
+  - position: [75.3, -1.9, 0.0]
+    class: big-orange
+  - position: [150.0, 0.0, 0.0]
+    class: small-orange
