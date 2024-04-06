@@ -729,6 +729,9 @@ class drawScene(QGraphicsScene):
         return t
 
     def on_click(self, event):
+        # to prevent that cones are unselected when only clicking middle button (drag view)
+        if(event.button() == Qt.MouseButton.MiddleButton):
+            return
         super().mousePressEvent(event)
 
     def on_click_release(self, event):
