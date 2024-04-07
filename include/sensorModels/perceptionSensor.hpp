@@ -56,6 +56,12 @@ private:
     double detection_prob_decrease_dist_linear;
     double detection_prob_decrease_dist_quadratic;
     double min_detection_prob;
+
+    double classification_max_distance;
+    double classification_prob_min_dist;
+    double classification_prob_decrease_dist_linear;
+    double classification_prob_decrease_dist_quadratic;
+    double min_classification_prob;
 };
 
 #endif /* PACSIMPERCEPTIONSENSOR_HPP */

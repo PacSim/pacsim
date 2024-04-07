@@ -42,6 +42,11 @@ LandmarkList trackToLMList(Track& in)
             ret.list.push_back(lm);
         }
     }
+    for (auto& p : in.time_keeping_gates)
+    {
+        ret.list.push_back(p.first);
+        ret.list.push_back(p.second);
+    }
     return ret;
 }
 

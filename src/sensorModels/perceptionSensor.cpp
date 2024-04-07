@@ -74,6 +74,14 @@ void PerceptionSensor::readConfig(ConfigElement& config)
     config["detection"].getElement<double>(
         &this->detection_prob_decrease_dist_quadratic, "prob_decrease_dist_quadratic");
     config["detection"].getElement<double>(&this->min_detection_prob, "min_prob");
+
+    config["classification"].getElement<double>(&this->classification_max_distance, "max_dist");
+    config["classification"].getElement<double>(&this->classification_prob_min_dist, "prob_min_dist");
+    config["classification"].getElement<double>(
+        &this->classification_prob_decrease_dist_linear, "prob_decrease_dist_linear");
+    config["classification"].getElement<double>(
+        &this->classification_prob_decrease_dist_quadratic, "prob_decrease_dist_quadratic");
+    config["classification"].getElement<double>(&this->min_classification_prob, "min_prob");
 }
 
 LandmarkList PerceptionSensor::process(LandmarkList& in, Eigen::Vector3d& trans, Eigen::Vector3d& rot, double time)
@@ -195,11 +203,55 @@ std::vector<Landmark> PerceptionSensor::addNoise(std::vector<Landmark>& in)
 std::vector<Landmark> PerceptionSensor::addClassProbailities(std::vector<Landmark>& in)
 {
     std::vector<Landmark> listNew;
+    bool detect_big_orange = true;
+    bool detect_timekeeping = true;
+    std::default_random_engine random_generator(this->numFrames);
+    std::uniform_real_distribution<double> unif(0, 1.0);
 
+    std::vector<int> detectionClasses = { LandmarkType::UNKNOWN, LandmarkType::BLUE, LandmarkType::YELLOW,
+        LandmarkType::ORANGE, LandmarkType::BIG_ORANGE };
     for (Landmark& lm : in)
     {
+        double dist = lm.position.norm();
+        double prob = this->classification_prob_min_dist
+            - (dist - this->minRange) * this->classification_prob_decrease_dist_linear
+            - std::pow((dist - this->minRange), 2) * this->classification_prob_decrease_dist_quadratic;
+        prob = std::max(prob, min_classification_prob);
+        if (dist > this->classification_max_distance)
+        {
+            prob = 1.0;
+            lm.type = LandmarkType::UNKNOWN;
+        }
+        // if it's some weird class (like timekeeping), just set as unknown
+        if (std::find(detectionClasses.begin(), detectionClasses.end(), lm.type) == detectionClasses.end())
+        {
+            lm.type = LandmarkType::UNKNOWN;
+        }
         std::fill(lm.typeWeights, lm.typeWeights + LandmarkType::UNKNOWN, 0);
-        lm.typeWeights[lm.type] = 1.0;
+        lm.typeWeights[lm.type] = prob;
+        for (auto i : detectionClasses)
+        {
+            if (i != lm.type)
+            {
+                lm.typeWeights[i] = (1 - prob) / ((double)detectionClasses.size() - 1);
+            }
+        }
+        // randomly swap some class with p = prob
+        double randomNum = unif(random_generator);
+        double acc = 0;
+        for (int i = 0; i < (LandmarkType::UNKNOWN + 1); ++i)
+        {
+            acc += lm.typeWeights[i];
+            if (acc > randomNum)
+            {
+                double tmp = lm.typeWeights[i];
+                lm.typeWeights[i] = lm.typeWeights[lm.type];
+                lm.typeWeights[lm.type] = tmp;
+                lm.type = static_cast<LandmarkType>(i);
+                break;
+            }
+        }
+
         listNew.push_back(lm);
     }
     return listNew;
