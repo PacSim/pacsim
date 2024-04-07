@@ -15,7 +15,7 @@ public:
     struct Penalty
     {
         int lap;
-        double time;
+        double occurence_time;
         PENALTY_TYPE reason;
         double penalty_time;
         Eigen::Vector3d position;

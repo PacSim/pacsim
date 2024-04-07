@@ -324,9 +324,9 @@ bool CompetitionLogic::evaluateOffCourse(
         {
             Penalty p;
             p.lap = lapTimes.size();
-            p.penalty_time = time;
+            p.penalty_time = 10.0;
             p.reason = PENALTY_TYPE::OC;
-            p.time = 10.0;
+            p.occurence_time = time;
             penalties.push_back(p);
         }
         Off_Course_Start = time;
@@ -409,12 +409,12 @@ void CompetitionLogic::evaluateConeHit(
         {
             Penalty p;
             p.lap = lapTimes.size();
-            p.penalty_time = time;
+            p.occurence_time = time;
             p.reason = PENALTY_TYPE::DOO;
-            p.time = 2.0;
+            p.penalty_time = 2.0;
             if (discipline == Discipline::SKIDPAD)
             {
-                p.time = 0.2;
+                p.penalty_time = 0.2;
             }
             penalties.push_back(p);
         }
@@ -526,7 +526,7 @@ bool CompetitionLogic::checkFinishConditionsMet(double time)
     bool ret = false;
     if (discipline == Discipline::SKIDPAD)
     {
-        ret = (lapTimes.size() == 4 && triggerTimes[1].size() >= 1);
+        ret = (lapTimes.size() == 4 && triggerTimes.at(1).size() >= 1);
     }
     if (discipline == Discipline::ACCELERATION)
     {
@@ -610,9 +610,9 @@ bool CompetitionLogic::checkUSS(Track track, double time, Eigen::Vector3d positi
         {
             Penalty p;
             p.lap = lapTimes.size();
-            p.penalty_time = time;
+            p.occurence_time = time;
             p.reason = PENALTY_TYPE::USS;
-            p.time = 10.0;
+            p.penalty_time = 10.0;
             penalties.push_back(p);
         }
     }
@@ -805,6 +805,10 @@ void CompetitionLogic::fillReport(Report& report, double time)
     {
         report.final_time_raw += t;
     }
+    if (Discipline::SKIDPAD && report.success)
+    {
+        report.final_time_raw = 0.5 * (lapTimes.at(1) + lapTimes.at(3));
+    }
     report.final_time = report.final_time_raw;
     for (int i = 0; i < lapTimes.size(); ++i)
     {
@@ -823,8 +827,8 @@ void CompetitionLogic::fillReport(Report& report, double time)
         Report::Penalty p;
         p.lap = penalties[i].lap;
         p.penalty_time = penalties[i].penalty_time;
-        report.final_time = p.penalty_time;
-        p.occurence_time = penalties[i].time;
+        report.final_time += p.penalty_time;
+        p.occurence_time = penalties[i].occurence_time;
         p.position = penalties[i].position;
         p.reason = penalty2str(penalties[i].reason);
         report.penalties.push_back(p);
