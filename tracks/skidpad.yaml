@@ -86,10 +86,14 @@ track:
   - position: [21.0, -1.65, 0.0]
     class: small-orange
   time_keeping:
-  - position: [0.0, 2.5, 0.0]
+  - position: [0.0, 3.0, 0.0]
     class: timekeeping
-  - position: [0.0, -2.5, 0.0]
+  - position: [0.0, -3.0, 0.0]
     class: timekeeping
+  - position: [10.20, 3.0, 0.0]
+    class: invisible
+  - position: [10.20, -3.0, 0.0]
+    class: invisible
   unknown:
   - position: [21.0, 0.0, 0.0]
     class: small-orange
