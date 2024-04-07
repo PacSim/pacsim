@@ -632,6 +632,19 @@ bool CompetitionLogic::checkDNF(Track track, double time, Eigen::Vector3d positi
             dnf_reason = "USS";
         }
     }
+    // skidpad icorrect turn direction
+    if (discipline == Discipline::SKIDPAD)
+    {
+        bool goneWrongLeft
+            = ((position.y() > 9.125) && (lapTimes.size() == 0 || lapTimes.size() == 1 || lapTimes.size() >= 4));
+        bool goneWrongRight
+            = ((position.y() < -9.125) && (lapTimes.size() == 2 || lapTimes.size() == 3 || lapTimes.size() >= 4));
+        if (goneWrongLeft || goneWrongRight)
+        {
+            ret = true;
+            dnf_reason = "incorrect_turn_direction";
+        }
+    }
     if (alreadyOC)
     {
         bool any = false;
@@ -648,7 +661,6 @@ bool CompetitionLogic::checkDNF(Track track, double time, Eigen::Vector3d positi
         }
     }
     ret = ret || checkTimeout(time);
-    // TODO skidpad wrong circle
     isDNF = isDNF || ret;
     return isDNF;
 }
