@@ -16,6 +16,12 @@ perception_sensors:
       min_angle_vertical: -0.2181662
       max_angle_vertical: 0.2181662
 
+    detection:
+      prob_min_dist: 0.99
+      prob_decrease_dist_linear: 0.01
+      prob_decrease_dist_quadratic: 0.00012
+      min_prob: 0.1
+
     noise:
       cartesian: #x, y, z
         mean: [0.0, 0.0, 0.0]
@@ -46,6 +52,12 @@ perception_sensors:
       min_angle_vertical: -0.2181662
       max_angle_vertical: 0.2181662
 
+    detection:
+      prob_min_dist: 0.99
+      prob_decrease_dist_linear: 0.01
+      prob_decrease_dist_quadratic: 0.00012
+      min_prob: 0.1
+
     noise:
       cartesian: #x, y, z
         mean: [0.0, 0.0, 0.0]
@@ -75,6 +87,12 @@ perception_sensors:
       max_angle_horizontal: 1.0472
       min_angle_vertical: -0.2181662
       max_angle_vertical: 0.2181662
+
+    detection:
+      prob_min_dist: 0.99
+      prob_decrease_dist_linear: 0.01
+      prob_decrease_dist_quadratic: 0.00012
+      min_prob: 0.1
 
     noise:
       cartesian: #x, y, z

@@ -11,22 +11,9 @@
 class PerceptionSensor : public SensorBase<LandmarkList>
 {
 public:
-    PerceptionSensor(std::string name, double minRange, double maxRange, double minAngle, double maxAngle, double rate,
-        double deadTime, std::string frame_id);
-
     PerceptionSensor();
 
     void readConfig(ConfigElement& config);
-
-    void setSensorPose(const Eigen::Vector3d& position, const Eigen::Vector3d& orientation);
-
-    void setSensorNoiseXYZ(const Eigen::Vector3d& mean, const Eigen::Vector3d& sigma);
-
-    void setSensorNoiseRange(double mean, double sigma);
-
-    void setSensorNoiseRangeRelative(double mean, double sigma);
-
-    void setSensorNoiseAngle(const Eigen::Vector2d& mean, const Eigen::Vector2d& sigma);
 
     LandmarkList process(LandmarkList& in, Eigen::Vector3d& trans, Eigen::Vector3d& rot, double time);
 
@@ -64,6 +51,11 @@ private:
     double errorMeanRangeRelative;
     Eigen::Vector2d errorSigmaAngle;
     Eigen::Vector2d errorMeanAngle;
+
+    double detection_prob_min_dist;
+    double detection_prob_decrease_dist_linear;
+    double detection_prob_decrease_dist_quadratic;
+    double min_detection_prob;
 };
 
 #endif /* PACSIMPERCEPTIONSENSOR_HPP */

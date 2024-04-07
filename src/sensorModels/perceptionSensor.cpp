@@ -1,30 +1,5 @@
 #include "sensorModels/perceptionSensor.hpp"
 
-PerceptionSensor::PerceptionSensor(std::string name, double minRange, double maxRange, double minAngle, double maxAngle,
-    double rate, double deadTime, std::string frame_id)
-{
-    this->name = name;
-    this->frame_id = frame_id;
-    this->maxRange = maxRange;
-    this->minRange = minRange;
-    this->minAngleHorizontal = minAngle;
-    this->maxAngleHorizontal = maxAngle;
-    this->rate = rate;
-    this->lastSampleTime = 0.0;
-    this->deadTime = deadTime;
-    this->position = Eigen::Vector3d(0.0, 0.0, 0.0);
-    this->orientation = Eigen::Vector3d(0.0, 0.0, 0.0);
-    this->errorMeanXYZ = Eigen::Vector3d::Zero();
-    this->errorSigmaXYZ = Eigen::Vector3d::Zero();
-    this->errorMeanRange = 0.0;
-    this->errorSigmaRange = 0.0;
-    this->errorMeanRangeRelative = 0.0;
-    this->errorSigmaRangeRelative = 0.0;
-    this->errorMeanAngle = Eigen::Vector2d::Zero();
-    this->errorSigmaAngle = Eigen::Vector2d::Zero();
-    this->numFrames = 0;
-}
-
 PerceptionSensor::PerceptionSensor()
 {
     this->name = "";
@@ -47,6 +22,10 @@ PerceptionSensor::PerceptionSensor()
     this->errorMeanAngle = Eigen::Vector2d::Zero();
     this->errorSigmaAngle = Eigen::Vector2d::Zero();
     this->numFrames = 0;
+    this->detection_prob_min_dist = 0.99;
+    this->detection_prob_decrease_dist_linear = 0.01;
+    this->detection_prob_decrease_dist_quadratic = 0.00012;
+    this->min_detection_prob = 0.1;
 }
 
 void PerceptionSensor::readConfig(ConfigElement& config)
@@ -89,36 +68,12 @@ void PerceptionSensor::readConfig(ConfigElement& config)
     config["noise"]["range"].getElement<double>(&this->errorSigmaRange, "sigma");
     config["noise"]["range_relative"].getElement<double>(&this->errorMeanRangeRelative, "mean");
     config["noise"]["range_relative"].getElement<double>(&this->errorSigmaRangeRelative, "sigma");
-}
 
-void PerceptionSensor::setSensorPose(const Eigen::Vector3d& position, const Eigen::Vector3d& orientation)
-{
-    this->position = position;
-    this->orientation = orientation;
-}
-
-void PerceptionSensor::setSensorNoiseXYZ(const Eigen::Vector3d& mean, const Eigen::Vector3d& sigma)
-{
-    this->errorMeanXYZ = mean;
-    this->errorSigmaXYZ = sigma;
-}
-
-void PerceptionSensor::setSensorNoiseRange(double mean, double sigma)
-{
-    this->errorMeanRange = mean;
-    this->errorSigmaRange = sigma;
-}
-
-void PerceptionSensor::setSensorNoiseRangeRelative(double mean, double sigma)
-{
-    this->errorMeanRangeRelative = mean;
-    this->errorSigmaRangeRelative = sigma;
-}
-
-void PerceptionSensor::setSensorNoiseAngle(const Eigen::Vector2d& mean, const Eigen::Vector2d& sigma)
-{
-    this->errorMeanAngle = mean;
-    this->errorSigmaAngle = sigma;
+    config["detection"].getElement<double>(&this->detection_prob_min_dist, "prob_min_dist");
+    config["detection"].getElement<double>(&this->detection_prob_decrease_dist_linear, "prob_decrease_dist_linear");
+    config["detection"].getElement<double>(
+        &this->detection_prob_decrease_dist_quadratic, "prob_decrease_dist_quadratic");
+    config["detection"].getElement<double>(&this->min_detection_prob, "min_prob");
 }
 
 LandmarkList PerceptionSensor::process(LandmarkList& in, Eigen::Vector3d& trans, Eigen::Vector3d& rot, double time)
@@ -254,10 +209,22 @@ std::vector<Landmark> PerceptionSensor::handleFalsePositivesAndNegatives(std::ve
 {
     std::vector<Landmark> listNew;
 
+    std::default_random_engine random_generator(this->numFrames);
+    std::uniform_real_distribution<double> unif(0, 1.0);
+
     for (Landmark& lm : in)
     {
-        lm.detection_probability = 1.0;
-        listNew.push_back(lm);
+        double dist = lm.position.norm();
+        double detection_prob = this->detection_prob_min_dist
+            - (dist - this->minRange) * this->detection_prob_decrease_dist_linear
+            - std::pow((dist - this->minRange), 2) * this->detection_prob_decrease_dist_quadratic;
+        detection_prob = std::max(this->min_detection_prob, detection_prob);
+        double random = unif(random_generator);
+        if (random < detection_prob)
+        {
+            lm.detection_probability = detection_prob;
+            listNew.push_back(lm);
+        }
     }
     return listNew;
 }
