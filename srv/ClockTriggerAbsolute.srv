@@ -1,0 +1,3 @@
+builtin_interfaces/Time stop_time
+---
+bool already_past # whether stop_time was already in the past

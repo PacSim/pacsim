@@ -1,0 +1,3 @@
+builtin_interfaces/Duration runtime
+---
+builtin_interfaces/Time stop_time # time at which simulation will stop running

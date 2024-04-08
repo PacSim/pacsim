@@ -2,6 +2,8 @@
 #include <sstream>
 
 #include <chrono>
+#include <condition_variable>
+#include <limits>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -34,6 +36,8 @@
 #include "pacsim/msg/perception_detections.hpp"
 #include "pacsim/msg/stamped_scalar.hpp"
 #include "pacsim/msg/wheels.hpp"
+#include "pacsim/srv/clock_trigger_absolute.hpp"
+#include "pacsim/srv/clock_trigger_relative.hpp"
 
 #include "types.hpp"
 
@@ -98,6 +102,9 @@ std::shared_ptr<ScalarValueSensor> steeringSensorRear;
 std::shared_ptr<WheelsSensor> wheelspeedSensor;
 std::shared_ptr<WheelsSensor> torquesSensor;
 
+std::condition_variable cvClockTrigger;
+double clockStopTime = std::numeric_limits<double>::max();
+
 int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
 {
 
@@ -137,6 +144,9 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
 
     cl = std::make_shared<CompetitionLogic>(lms, mainConfig);
     bool finish = false;
+    std::mutex mtxClockTrigger;
+    std::unique_lock<std::mutex> lockClockTrigger(mtxClockTrigger);
+
     while (rclcpp::ok() && !(finish))
     {
         rosgraph_msgs::msg::Clock clockMsg;
@@ -284,6 +294,11 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
         mutexSimTime.lock();
         simTime += timestep;
         mutexSimTime.unlock();
+        if (simTime >= clockStopTime)
+        {
+            cvClockTrigger.wait(lockClockTrigger);
+            nextLoopTime = std::chrono::steady_clock::now();
+        }
         nextLoopTime += std::chrono::microseconds((int)((timestep / realtimeRatio) * 1000000.0));
         std::this_thread::sleep_until(nextLoopTime);
     }
@@ -337,6 +352,23 @@ void cbFinishSignal(const std::shared_ptr<std_srvs::srv::Empty::Request> request
     cl->setFinish(true);
 }
 
+void cbClockTriggerAbsolute(const std::shared_ptr<pacsim::srv::ClockTriggerAbsolute::Request> request,
+    std::shared_ptr<pacsim::srv::ClockTriggerAbsolute::Response> response)
+{
+    std::lock_guard<std::mutex> l(mutexSimTime);
+    clockStopTime = rclcpp::Time(request->stop_time).seconds();
+    response->already_past = (clockStopTime < simTime);
+    cvClockTrigger.notify_all();
+}
+
+void cbClockTriggerRelative(const std::shared_ptr<pacsim::srv::ClockTriggerRelative::Request> request,
+    std::shared_ptr<pacsim::srv::ClockTriggerRelative::Response> response)
+{
+    std::lock_guard<std::mutex> l(mutexSimTime);
+    clockStopTime = simTime + rclcpp::Duration(request->runtime).seconds();
+    response->stop_time = rclcpp::Time(static_cast<uint64_t>(clockStopTime * 1e9));
+    cvClockTrigger.notify_all();
+}
 void getRos2Params(rclcpp::Node::SharedPtr& node)
 {
     std::vector<std::pair<std::string, std::string*>> params;
@@ -445,6 +477,10 @@ int main(int argc, char** argv)
     mapVizPub = node->create_publisher<visualization_msgs::msg::MarkerArray>("/pacsim/map", 1);
 
     auto finishSignalServer = node->create_service<std_srvs::srv::Empty>("/pacsim/finish_signal", cbFinishSignal);
+    auto clockTriggerAbsoluteServer = node->create_service<pacsim::srv::ClockTriggerAbsolute>(
+        "/pacsim/clock_trigger/absolute", cbClockTriggerAbsolute);
+    auto clockTriggerRelativeServer = node->create_service<pacsim::srv::ClockTriggerRelative>(
+        "/pacsim/clock_trigger/relative", cbClockTriggerRelative);
 
     getRos2Params(node);
     mainConfig = fillMainConfig(main_config_path);
