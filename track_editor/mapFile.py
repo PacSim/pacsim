@@ -69,10 +69,10 @@ def writeYaml(fileName, cones, leftLane, rightLane, timeKeeping, startPose, eart
     for c in timeKeeping:
       time_keeping.append({"position": f"[{c[0][0]}, {c[0][1]}, {c[0][2]}]", "class": landmarkTypeToString(c[1])})
 
-    version_number = 0.9
+    version_number = 1.0
     yaml_dict = OrderedDict({
-      "version": str(version_number),
       "track": OrderedDict({
+        "version": str(version_number),
         "lanesFirstWithLastConnected" : True,
         "start": OrderedDict({
             "position": f'[{start_position[0]}, {start_position[1]}, {start_position[2]}]',

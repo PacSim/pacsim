@@ -1,5 +1,5 @@
-version: 0.9
 track:
+  version: 1.0
   lanesFirstWithLastConnected: false
   start:
     position: [-16.68, 0.0, 0.0]

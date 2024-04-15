@@ -95,8 +95,8 @@ def write_to_yaml(cones: dict, file_path: str) -> None:
 	start_orientation = (0.0, 0.0, 0.0)
 
 	yaml_file = OrderedDict({
-		"version": 0.9,
 		"track": OrderedDict({
+		    "version": 1.0,
 			"lanesFirstWithLastConnected": True,
 			"start": OrderedDict({
 					"position": f'[{start_position[0]}, {start_position[1]}, {start_position[2]}]',
