@@ -817,7 +817,7 @@ void CompetitionLogic::fillReport(Report& report, double time)
     {
         report.final_time_raw += t;
     }
-    if (Discipline::SKIDPAD && report.success)
+    if ((discipline == Discipline::SKIDPAD) && report.success)
     {
         report.final_time_raw = 0.5 * (lapTimes.at(1) + lapTimes.at(3));
     }
