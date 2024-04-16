@@ -1,6 +1,6 @@
 #include "competitionLogic.hpp"
 
-CompetitionLogic::CompetitionLogic(Track& track, MainConfig config)
+CompetitionLogic::CompetitionLogic(std::shared_ptr<Logger> logger, Track& track, MainConfig config)
 {
     timeKeepingStatuses = std::vector<int>(track.time_keeping_gates.size(), 0);
     timeKeepingFirstTriggerStatuses = std::vector<int>(track.time_keeping_gates.size(), 0);
@@ -29,6 +29,14 @@ CompetitionLogic::CompetitionLogic(Track& track, MainConfig config)
     timeout_skidpad = config.timeout_skidpad;
     timeout_trackdrive_first = config.timeout_trackdrive_first;
     timeout_trackdrive_total = config.timeout_trackdrive_total;
+    properTrack
+        = (track.left_lane.size() > 3) && (track.right_lane.size() >= 3) && (track.time_keeping_gates.size() >= 1);
+    if (!properTrack)
+    {
+        started = true; // can't check for timeout_start
+        timeout_trackdrive_first = timeout_trackdrive_total; // we can't check first lap
+        logger->logError("Track file is incomplete, very limited competition logic functionality!");
+    }
 }
 
 bool CompetitionLogic::pointInTriangle(Eigen::Vector2d a, Eigen::Vector2d b, Eigen::Vector2d c, Eigen::Vector2d point)
@@ -660,7 +668,6 @@ bool CompetitionLogic::checkDNF(Track track, double time, Eigen::Vector3d positi
             dnf_reason = "OC";
         }
     }
-    ret = ret || checkTimeout(time);
     isDNF = isDNF || ret;
     return isDNF;
 }
@@ -723,12 +730,17 @@ bool CompetitionLogic::performAllChecks(
     Track& track, double time, Eigen::Vector3d& position, Eigen::Vector3d& orientation)
 {
     // return true when simulation should stop
-    evaluateOffCourse(track, time, position, orientation);
-    evaluateTimeKeepings(track, position, orientation, time);
-    checkFinishConditionsMet(time);
-    ussTriggered = ussTriggered || checkUSS(track, time, position);
+    bool ret = false;
+    if (properTrack)
+    {
+        evaluateOffCourse(track, time, position, orientation);
+        evaluateTimeKeepings(track, position, orientation, time);
+        checkFinishConditionsMet(time);
+        ussTriggered = ussTriggered || checkUSS(track, time, position);
+        ret = ret || checkDNF(track, time, position);
+    }
     evaluateConeHit(track, time, position, orientation);
-    bool ret = checkDNF(track, time, position);
+    ret = ret || checkTimeout(time);
     ret = ret || finishSignal;
     return ret;
 }
@@ -809,9 +821,15 @@ void CompetitionLogic::fillReport(Report& report, double time)
         report.timeout_first_lap = report.timeout_total;
     }
 
-    report.off_course_detect = true;
+    if (!properTrack)
+    {
+        report.success = false;
+        report.dnf_reason = "INCORRECT_TRACK_FILE";
+    }
+
+    report.off_course_detect = true && properTrack;
     report.cone_hit_detect = true;
-    report.uss_detect = true;
+    report.uss_detect = true && properTrack;
 
     for (auto t : lapTimes)
     {

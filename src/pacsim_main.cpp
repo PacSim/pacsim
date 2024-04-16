@@ -22,6 +22,7 @@
 
 #include "track/trackLoader.hpp"
 
+#include "logger.hpp"
 #include "sensorModels/imuSensor.hpp"
 #include "sensorModels/perceptionSensor.hpp"
 #include "sensorModels/scalarValueSensor.hpp"
@@ -38,7 +39,6 @@
 #include "pacsim/msg/wheels.hpp"
 #include "pacsim/srv/clock_trigger_absolute.hpp"
 #include "pacsim/srv/clock_trigger_relative.hpp"
-
 #include "types.hpp"
 
 #include "competitionLogic.hpp"
@@ -101,6 +101,7 @@ std::shared_ptr<ScalarValueSensor> steeringSensorFront;
 std::shared_ptr<ScalarValueSensor> steeringSensorRear;
 std::shared_ptr<WheelsSensor> wheelspeedSensor;
 std::shared_ptr<WheelsSensor> torquesSensor;
+std::shared_ptr<Logger> logger;
 
 std::condition_variable cvClockTrigger;
 double clockStopTime = std::numeric_limits<double>::max();
@@ -142,7 +143,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
 
     auto nextLoopTime = std::chrono::steady_clock::now();
 
-    cl = std::make_shared<CompetitionLogic>(lms, mainConfig);
+    cl = std::make_shared<CompetitionLogic>(logger, lms, mainConfig);
     bool finish = false;
     std::mutex mtxClockTrigger;
     std::unique_lock<std::mutex> lockClockTrigger(mtxClockTrigger);
@@ -460,6 +461,7 @@ int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<rclcpp::Node>("pacsim_node");
+    logger = std::make_shared<Logger>();
 
     auto latsub = node->create_subscription<pacsim::msg::StampedScalar>("/pacsim/steering_setpoint", 1, cbFuncLat);
     auto torquessubmin
@@ -517,7 +519,7 @@ int main(int argc, char** argv)
     model->readConfig(configVehicleModel);
 
     std::thread mainLoopThread(threadMainLoopFunc, std::ref(node));
-    RCLCPP_INFO_STREAM(node->get_logger(), "Started pacsim");
+    logger->logInfo("Started pacsim");
     executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor->add_node(node);
     executor->spin();

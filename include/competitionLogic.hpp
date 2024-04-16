@@ -1,3 +1,7 @@
+#ifndef COMPETITIONLOGIC_HPP
+#define COMPETITIONLOGIC_HPP
+
+#include "logger.hpp"
 #include "types.hpp"
 #include <iostream>
 #include <string>
@@ -21,7 +25,7 @@ public:
         Eigen::Vector3d position;
     };
 
-    CompetitionLogic(Track& track, MainConfig config);
+    CompetitionLogic(std::shared_ptr<Logger> logger, Track& track, MainConfig config);
 
     bool evaluateOffCourse(Track& track, double time, Eigen::Vector3d& position, Eigen::Vector3d& orientation);
 
@@ -103,4 +107,7 @@ private:
     double timeout_skidpad;
     double timeout_trackdrive_first;
     double timeout_trackdrive_total;
+    bool properTrack;
 };
+
+#endif /* COMPETITIONLOGIC_HPP */
