@@ -1,0 +1,52 @@
+{
+    "name": "ROS 2 Development Container",
+    "privileged": true,
+    "remoteUser": "${localEnv:USERNAME}",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            "USERNAME": "${localEnv:USERNAME}"
+        }
+    },
+    "features": {
+        "ghcr.io/itsmechlark/features/act:1": {},
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    },
+    "workspaceFolder": "/home/ws",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/ws,type=bind",
+    "customizations": {
+        "vscode": {
+            "extensions":[
+                "ms-vscode.cpptools",
+                "ms-azuretools.vscode-docker",
+                "ms-vscode.cpptools-extension-pack",
+                "twxs.cmake",
+                "donjayamanne.python-extension-pack",
+                "eamodio.gitlens",
+                "ms-iot.vscode-ros",
+                "GitHub.vscode-github-actions"
+            ]
+        }
+    },
+    "containerEnv": {
+        "DISPLAY": "unix:0",
+        "ROS_AUTOMATIC_DISCOVERY_RANGE": "LOCALHOST",
+        "ROS_DOMAIN_ID": "42"
+    },
+    "runArgs": [
+        "--net=host",
+        "--ipc=host",
+        "--pid=host",
+        "-e", "DISPLAY=${env:DISPLAY}",
+        "-p", "8765:8765"
+    ],
+    "mounts": [
+       "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+        "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached",
+        "source=${localWorkspaceFolder}/cache/iron-ros-base-jammy/build,target=/home/ws/build,type=bind",
+        "source=${localWorkspaceFolder}/cache/iron-ros-base-jammy/install,target=/home/ws/install,type=bind",
+        "source=${localWorkspaceFolder}/cache/iron-ros-base-jammy/log,target=/home/ws/log,type=bind"
+    ],
+    "postCreateCommand": "sudo apt update && rosdep update && rosdep install --from-paths src --ignore-src -y && sudo chown -R ${localEnv:USERNAME} /home/ws/",
+	"initializeCommand": "echo Initialize...."
+}

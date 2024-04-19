@@ -1,0 +1,38 @@
+services:
+  ros2_dev:
+    container_name: ros2_development_container
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        USERNAME: "${USERNAME}"
+    environment:
+      DISPLAY: "${DISPLAY}"
+      ROS_AUTOMATIC_DISCOVERY_RANGE: "LOCALHOST"
+      ROS_DOMAIN_ID: "42"
+    volumes:
+      - type: bind
+        source: "./"
+        target: /home/ws
+      - type: bind
+        source: "/tmp/.X11-unix"
+        target: "/tmp/.X11-unix"
+        consistency: cached
+      - type: bind
+        source: "/dev/dri"
+        target: "/dev/dri"
+        consistency: cached
+      - type: bind
+        source: "./cache/iron-ros-base-jammy/build"
+        target: "/home/ws/build"
+      - type: bind
+        source: "./cache/iron-ros-base-jammy/install"
+        target: "/home/ws/install"
+      - type: bind
+        source: "./cache/iron-ros-base-jammy/log"
+        target: "/home/ws/log"
+    ports:
+      - "8765:8765"
+    network_mode: host
+    command: > 
+      bash -c "cd home/ws/ && ./entrypoint.sh"
