@@ -2,6 +2,7 @@
 **/install/*
 **/log/*
 **/.vscode/*
+*.db3
 
 
 !.gitkeep
