@@ -1,5 +1,5 @@
 services:
-  ros2_dev:
+  pacsim:
     container_name: ros2_development_container
     build:
       context: .
@@ -35,4 +35,4 @@ services:
       - "8765:8765"
     network_mode: host
     command: > 
-      bash -c "cd home/ws/ && ./entrypoint.sh"
+      bash -c "cd /home/ws/ && ./entrypoint.sh"
