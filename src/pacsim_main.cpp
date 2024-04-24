@@ -13,6 +13,7 @@
 #include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <tf2/LinearMath/Quaternion.h>
+#include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 
 #include "VehicleModel/VehicleModelBicycle.cpp"
@@ -61,6 +62,7 @@ rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringRearPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr wheelspeedPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr torquesPub;
 rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointStatePublisher;
+std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
 
 rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr perceptionVizPub;
 std::vector<rclcpp::Publisher<pacsim::msg::PerceptionDetections>::SharedPtr> lms_pubs;
@@ -111,10 +113,6 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
 
     std::unique_ptr<tf2_ros::TransformBroadcaster> br = std::make_unique<tf2_ros::TransformBroadcaster>(node);
 
-    /*
-    auto static_broadcaster = std::make_shared<rclcpp::Node>("static_broadcaster");
-    std::unique_ptr<tf2_ros::TransformBroadcaster> brstatic =
-    std::make_unique<tf2_ros::TransformBroadcaster>(static_broadcaster);*/
     double timestep = 1.0 / 1000.0;
     double egoMotionSensorRate = 200.0;
     double lastEgoMotionSensorSampleTime = 0.0;
@@ -163,7 +161,6 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
             = createRosTransformMsg(t, rEulerAngles, trackFrame, "car", simTime);
 
         br->sendTransform(transformStamped);
-        // brstatic->sendTransform(static_transform);
 
         if (deadTimeSteeringFront.availableDeadTime(simTime))
         {
@@ -448,6 +445,9 @@ MainConfig fillMainConfig(std::string path)
     config["timeouts"].getElement<double>(&ret.timeout_trackdrive_first, "trackdrive_first");
     config["timeouts"].getElement<double>(&ret.timeout_trackdrive_total, "trackdrive_total");
 
+    config.getElement<std::string>(&ret.cog_frame_id_pipeline, "cog_frame_id_pipeline");
+    config.getElement<bool>(&ret.broadcast_sensors_tf2, "broadcast_sensors_tf2");
+
     config.getElement<bool>(&ret.oc_detect, "oc_detect");
     config.getElement<bool>(&ret.doo_detect, "doo_detect");
     config.getElement<bool>(&ret.uss_detect, "uss_detect");
@@ -457,10 +457,41 @@ MainConfig fillMainConfig(std::string path)
     return ret;
 }
 
+void handleTf2StaticTransforms()
+{
+    if (mainConfig.broadcast_sensors_tf2)
+    {
+
+        for (auto sensor : perceptionSensors)
+        {
+            geometry_msgs::msg::TransformStamped t;
+
+            t.header.stamp = rclcpp::Time(0, 0);
+            t.header.frame_id = mainConfig.cog_frame_id_pipeline;
+            t.child_frame_id = sensor->getFrameId();
+
+            auto translation = sensor->getPosition();
+            auto orientation = sensor->getOrientation();
+            t.transform.translation.x = translation.x();
+            t.transform.translation.y = translation.y();
+            t.transform.translation.z = translation.z();
+            tf2::Quaternion q;
+            q.setRPY(orientation.x(), orientation.y(), orientation.z());
+            t.transform.rotation.x = q.x();
+            t.transform.rotation.y = q.y();
+            t.transform.rotation.z = q.z();
+            t.transform.rotation.w = q.w();
+
+            tf_static_broadcaster_->sendTransform(t);
+        }
+    }
+}
+
 int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<rclcpp::Node>("pacsim_node");
+    tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
     logger = std::make_shared<Logger>();
 
     auto latsub = node->create_subscription<pacsim::msg::StampedScalar>("/pacsim/steering_setpoint", 1, cbFuncLat);
@@ -488,6 +519,7 @@ int main(int argc, char** argv)
     mainConfig = fillMainConfig(main_config_path);
     initPerceptionSensors();
     initSensors();
+    handleTf2StaticTransforms();
     for (auto& i : perceptionSensors)
     {
         auto detectionsMarkersWrapper = std::make_shared<LandmarksMarkerWrapper>(0.8, "pacsim/" + i->getName());

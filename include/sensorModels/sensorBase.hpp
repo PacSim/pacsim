@@ -36,6 +36,10 @@ public:
         return;
     }
 
+    Eigen::Vector3d getPosition() { return this->position; }
+
+    Eigen::Vector3d getOrientation() { return this->orientation; }
+
 protected:
     Eigen::Vector3d position;
     Eigen::Vector3d orientation;
