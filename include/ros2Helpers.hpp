@@ -8,6 +8,7 @@
 #include "pacsim/msg/perception_detections.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
+#include "sensor_msgs/msg/nav_sat_fix.hpp"
 #include "types.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include <Eigen/Dense>
@@ -45,5 +46,7 @@ geometry_msgs::msg::TransformStamped createStaticTransform(
 
 sensor_msgs::msg::JointState createRosJointMsg(
     const std::vector<std::string>& joint_names, const std::vector<double>& joint_vals, double time);
+
+sensor_msgs::msg::NavSatFix createRosNavSatFixMsg(const GnssData& data);
 
 #endif /* PACSIMROS2HELPERS_HPP */

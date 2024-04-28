@@ -42,6 +42,8 @@ struct Track
     std::vector<Landmark> right_lane;
     std::vector<Landmark> unknown;
     std::vector<std::pair<Landmark, Landmark>> time_keeping_gates;
+    Eigen::Vector3d gnssOrigin;
+    Eigen::Vector3d enuToTrackRotation;
 };
 
 struct LandmarkList
@@ -85,6 +87,16 @@ struct ImuData
 
     Eigen::Matrix3d acc_cov;
     Eigen::Matrix3d rot_cov;
+
+    double timestamp;
+    std::string frame;
+};
+
+struct GnssData
+{
+    double latitude;
+    double longitude;
+    double altitude;
 
     double timestamp;
     std::string frame;

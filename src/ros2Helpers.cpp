@@ -398,3 +398,14 @@ sensor_msgs::msg::JointState createRosJointMsg(
 
     return jointStamped;
 }
+
+sensor_msgs::msg::NavSatFix createRosNavSatFixMsg(const GnssData& data)
+{
+    sensor_msgs::msg::NavSatFix msg;
+    msg.header.stamp = rclcpp::Time(static_cast<uint64_t>(data.timestamp * 1e9));
+    msg.latitude = data.latitude;
+    msg.longitude = data.longitude;
+    msg.altitude = data.altitude;
+    msg.position_covariance_type = 0;
+    return msg;
+}

@@ -48,6 +48,8 @@
 
 #include "reportWriter.hpp"
 
+#include "sensorModels/gnssSensor.hpp"
+
 // DynamicDoubleTrackModel7Dof model;
 std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor;
 std::shared_ptr<IVehicleModel> model;
@@ -62,6 +64,8 @@ rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringRearPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr wheelspeedPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr torquesPub;
 rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointStatePublisher;
+rclcpp::Publisher<sensor_msgs::msg::NavSatFix>::SharedPtr gpsPub;
+
 std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
 
 rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr perceptionVizPub;
@@ -145,6 +149,8 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     bool finish = false;
     std::mutex mtxClockTrigger;
     std::unique_lock<std::mutex> lockClockTrigger(mtxClockTrigger);
+
+    std::shared_ptr<GnssSensor> gps = std::make_shared<GnssSensor>(50.0, 0.05);
 
     while (rclcpp::ok() && !(finish))
     {
@@ -236,6 +242,13 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
             msg.value = steeringData.data;
             msg.stamp = rclcpp::Time(static_cast<uint64_t>(steeringData.timestamp * 1e9));
             steeringRearPub->publish(msg);
+        }
+
+        if (gps->RunTick(lms.gnssOrigin, lms.enuToTrackRotation, t, rEulerAngles, simTime))
+        {
+            auto gpsData = gps->getOldest();
+            auto gpsMsg = createRosNavSatFixMsg(gpsData);
+            gpsPub->publish(gpsMsg);
         }
 
         for (auto& perceptionSensor : perceptionSensors)
@@ -544,6 +557,8 @@ int main(int argc, char** argv)
     torquesPub = node->create_publisher<pacsim::msg::Wheels>("/pacsim/torques", 1);
 
     jointStatePublisher = node->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 3);
+
+    gpsPub = node->create_publisher<sensor_msgs::msg::NavSatFix>("/pacsim/gnss", 1);
 
     model = std::make_shared<VehicleModelBicycle>();
     Config modelConfig(vehicle_model_config_path);

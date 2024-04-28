@@ -68,8 +68,13 @@ Track loadMap(string mapPath, Eigen::Vector3d& start_position, Eigen::Vector3d& 
     start_position = Eigen::Vector3d(start_pos.data());
     start_orientation = Eigen::Vector3d(start_or.data());
 
-    int coneCounter = 0;
     Track ret;
+    std::vector<double> gnss_start_pos = track["earthToTrack"]["position"].as<vector<double>>();
+    std::vector<double> gnss_start_or = track["earthToTrack"]["orientation"].as<vector<double>>();
+    ret.gnssOrigin = Eigen::Vector3d(gnss_start_pos.data());
+    ret.enuToTrackRotation = Eigen::Vector3d(gnss_start_or.data());
+
+    int coneCounter = 0;
     if (track["lanesFirstWithLastConnected"])
     {
         ret.lanesFirstWithLastConnected = track["lanesFirstWithLastConnected"].as<bool>();
