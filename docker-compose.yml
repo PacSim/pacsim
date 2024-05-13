@@ -1,6 +1,6 @@
 services:
   pacsim:
-    container_name: ros2_development_container
+    container_name: pacsim-container
     build:
       context: .
       dockerfile: .devcontainer/Dockerfile
@@ -34,5 +34,7 @@ services:
     ports:
       - "8765:8765"
     network_mode: host
+    ipc: host
+    pid: host
     command: > 
       bash -c "cd /home/ws/ && ./entrypoint.sh"
