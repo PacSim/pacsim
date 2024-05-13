@@ -64,7 +64,7 @@ rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringRearPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr wheelspeedPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr torquesPub;
 rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointStatePublisher;
-rclcpp::Publisher<sensor_msgs::msg::NavSatFix>::SharedPtr gpsPub;
+rclcpp::Publisher<pacsim::msg::GNSS>::SharedPtr gpsPub;
 
 std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
 
@@ -247,7 +247,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
         if (gps->RunTick(lms.gnssOrigin, lms.enuToTrackRotation, t, rEulerAngles, simTime))
         {
             auto gpsData = gps->getOldest();
-            auto gpsMsg = createRosNavSatFixMsg(gpsData);
+            auto gpsMsg = createRosGnssMessage(gpsData);
             gpsPub->publish(gpsMsg);
         }
 
@@ -558,7 +558,7 @@ int main(int argc, char** argv)
 
     jointStatePublisher = node->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 3);
 
-    gpsPub = node->create_publisher<sensor_msgs::msg::NavSatFix>("/pacsim/gnss", 1);
+    gpsPub = node->create_publisher<pacsim::msg::GNSS>("/pacsim/gnss", 1);
 
     model = std::make_shared<VehicleModelBicycle>();
     Config modelConfig(vehicle_model_config_path);
