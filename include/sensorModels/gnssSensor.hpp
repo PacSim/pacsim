@@ -16,7 +16,7 @@ public:
     void readConfig(ConfigElement& config);
 
     bool RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrackRotation, Eigen::Vector3d& trans,
-        Eigen::Vector3d& rot, double time);
+        Eigen::Vector3d& rot, double time, Eigen::Vector3d velocity);
 
 private:
     double error_mean;

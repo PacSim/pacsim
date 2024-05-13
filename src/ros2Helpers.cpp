@@ -406,5 +406,9 @@ pacsim::msg::GNSS createRosGnssMessage(const GnssData& data)
     msg.latitude = data.latitude;
     msg.longitude = data.longitude;
     msg.altitude = data.altitude;
+
+    msg.velocity_east = data.vel_east;
+    msg.velocity_north = data.vel_north;
+    msg.velocity_up = data.vel_up;
     return msg;
 }

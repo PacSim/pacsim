@@ -73,7 +73,7 @@ Eigen::Matrix3d getEnuToEcefRotMat(double lat, double lon)
 }
 
 bool GnssSensor::RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrackRotation, Eigen::Vector3d& trans,
-    Eigen::Vector3d& rot, double time)
+    Eigen::Vector3d& rot, double time, Eigen::Vector3d velocity)
 {
 
     if (this->sampleReady(time))
@@ -88,10 +88,18 @@ bool GnssSensor::RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrac
         Eigen::Matrix3d rotMatTrackToEnu = eulerAnglesToRotMat(rotTrackToENU).transpose();
         Eigen::Vector3d ecefCar = rotEnuToEcef * (rotMatTrackToEnu * trans) + ecefRef;
         Eigen::Vector3d positionWgs = ecefToWgs84(ecefCar.x(), ecefCar.y(), ecefCar.z());
+
+        Eigen::Vector3d velENU = rotMatTrackToEnu * eulerAnglesToRotMat(rot) * velocity;
+
         GnssData value;
         value.latitude = positionWgs.x();
         value.longitude = positionWgs.y();
         value.altitude = positionWgs.z();
+
+        value.vel_east = velENU.x();
+        value.vel_north = velENU.y();
+        value.vel_up = velENU.z();
+
         this->deadTimeQueue.push(value);
         this->registerSampling();
     }

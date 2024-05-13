@@ -244,7 +244,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
             steeringRearPub->publish(msg);
         }
 
-        if (gps->RunTick(lms.gnssOrigin, lms.enuToTrackRotation, t, rEulerAngles, simTime))
+        if (gps->RunTick(lms.gnssOrigin, lms.enuToTrackRotation, t, rEulerAngles, simTime, model->getVelocity()))
         {
             auto gpsData = gps->getOldest();
             auto gpsMsg = createRosGnssMessage(gpsData);

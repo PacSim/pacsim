@@ -98,6 +98,10 @@ struct GnssData
     double longitude;
     double altitude;
 
+    double vel_east;
+    double vel_north;
+    double vel_up;
+
     double timestamp;
     std::string frame;
 };
