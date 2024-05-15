@@ -1,6 +1,7 @@
 #ifndef PACSIMTYPES_HPP
 #define PACSIMTYPES_HPP
 
+#include "quaternion.hpp"
 #include <Eigen/Core>
 #include <vector>
 
@@ -101,6 +102,8 @@ struct GnssData
     double vel_east;
     double vel_north;
     double vel_up;
+
+    quaternion orientation;
 
     double timestamp;
     std::string frame;

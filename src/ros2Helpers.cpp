@@ -410,5 +410,11 @@ pacsim::msg::GNSS createRosGnssMessage(const GnssData& data)
     msg.velocity_east = data.vel_east;
     msg.velocity_north = data.vel_north;
     msg.velocity_up = data.vel_up;
+
+    msg.orientation.w = data.orientation.w;
+    msg.orientation.x = data.orientation.x;
+    msg.orientation.y = data.orientation.y;
+    msg.orientation.z = data.orientation.z;
+
     return msg;
 }

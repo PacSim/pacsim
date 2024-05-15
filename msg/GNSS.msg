@@ -14,8 +14,9 @@ float64 longitude
 float64 altitude
 float64[9] position_covariance
 
-geometry_msgs/Quaternion heading
-float64[9] heading_covariance
+# relative to ENU plane
+geometry_msgs/Quaternion orientation
+float64[9] orientation_covariance
 
 float64 velocity_east
 float64 velocity_north

@@ -1,5 +1,7 @@
 #include "sensorModels/gnssSensor.hpp"
 
+#include "quaternion.hpp"
+
 GnssSensor::GnssSensor(double rate, double deadTime)
 {
     this->rate = rate;
@@ -91,6 +93,11 @@ bool GnssSensor::RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrac
 
         Eigen::Vector3d velENU = rotMatTrackToEnu * eulerAnglesToRotMat(rot) * velocity;
 
+        // car->track->enu
+        quaternion q1 = quatFromEulerAngles(rot);
+        quaternion q2 = quatFromEulerAngles(rotTrackToENU);
+        quaternion q3 = quatMult(q2, q1);
+
         GnssData value;
         value.latitude = positionWgs.x();
         value.longitude = positionWgs.y();
@@ -99,6 +106,8 @@ bool GnssSensor::RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrac
         value.vel_east = velENU.x();
         value.vel_north = velENU.y();
         value.vel_up = velENU.z();
+
+        value.orientation = q3;
 
         this->deadTimeQueue.push(value);
         this->registerSampling();
