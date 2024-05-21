@@ -2,14 +2,53 @@
 
 #include "quaternion.hpp"
 
-GnssSensor::GnssSensor(double rate, double deadTime)
+GnssSensor::GnssSensor()
 {
     this->rate = rate;
     this->lastSampleTime = 0.0;
     this->deadTime = deadTime;
+    this->noiseSeed = 0;
 }
 
-void GnssSensor::readConfig(ConfigElement& config) { return; }
+void GnssSensor::readConfig(ConfigElement& config)
+{
+    config.getElement<std::string>(&this->name, "name");
+    config.getElement<std::string>(&this->frame_id, "name");
+    config.getElement<double>(&this->rate, "rate");
+    config["delay"].getElement<double>(&this->deadTime, "mean");
+    std::vector<double> position;
+    config["pose"].getElement<std::vector<double>>(&position, "position");
+    this->position = Eigen::Vector3d(position[0], position[1], position[2]);
+    std::vector<double> orientation;
+    config["pose"].getElement<std::vector<double>>(&orientation, "orientation");
+    this->orientation = Eigen::Vector3d(orientation[0], orientation[1], orientation[2]);
+
+    std::vector<double> sigmaPosition;
+    config["noise"]["position"].getElement<std::vector<double>>(&sigmaPosition, "sigma");
+    this->errorSigmaPosition = Eigen::Vector3d(sigmaPosition[0], sigmaPosition[1], sigmaPosition[2]);
+    std::vector<double> meanPosition;
+    config["noise"]["position"].getElement<std::vector<double>>(&meanPosition, "mean");
+    this->errorMeanPosition = Eigen::Vector3d(meanPosition[0], meanPosition[1], meanPosition[2]);
+
+    std::vector<double> sigmaVelocity;
+    config["noise"]["velocity"].getElement<std::vector<double>>(&sigmaVelocity, "sigma");
+    this->errorSigmaVelocity = Eigen::Vector3d(sigmaVelocity[0], sigmaVelocity[1], sigmaVelocity[2]);
+    std::vector<double> meanVelocity;
+    config["noise"]["velocity"].getElement<std::vector<double>>(&meanVelocity, "mean");
+    this->errorMeanVelocity = Eigen::Vector3d(meanVelocity[0], meanVelocity[1], meanVelocity[2]);
+
+    std::vector<double> sigmaOrientation;
+    config["noise"]["orientation"].getElement<std::vector<double>>(&sigmaOrientation, "sigma");
+    this->errorSigmaOrientation = Eigen::Vector3d(sigmaOrientation[0], sigmaOrientation[1], sigmaOrientation[2]);
+    std::vector<double> meanOrientation;
+    config["noise"]["orientation"].getElement<std::vector<double>>(&meanOrientation, "mean");
+    this->errorMeanOrientation = Eigen::Vector3d(meanOrientation[0], meanOrientation[1], meanOrientation[2]);
+
+    config["features"].getElement<bool>(&this->outputVelocity, "velocity");
+    config["features"].getElement<int>(&this->orientationMode, "orientation");
+
+    return;
+}
 
 Eigen::Vector3d wgs84toEcef(double lat, double lon, double alt)
 {
@@ -74,8 +113,12 @@ Eigen::Matrix3d getEnuToEcefRotMat(double lat, double lon)
     return ret;
 }
 
+std::string GnssSensor::getName() { return this->name; }
+
+std::string GnssSensor::getFrameId() { return this->frame_id; }
+
 bool GnssSensor::RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrackRotation, Eigen::Vector3d& trans,
-    Eigen::Vector3d& rot, double time, Eigen::Vector3d velocity)
+    Eigen::Vector3d& rot, double time, Eigen::Vector3d velocity, Eigen::Vector3d omega)
 {
 
     if (this->sampleReady(time))
@@ -88,26 +131,90 @@ bool GnssSensor::RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrac
         auto rotEnuToEcef = getEnuToEcefRotMat(originLat, originLon);
         Eigen::Vector3d rotTrackToENU(enuToTrackRotation.x(), enuToTrackRotation.y(), enuToTrackRotation.z());
         Eigen::Matrix3d rotMatTrackToEnu = eulerAnglesToRotMat(rotTrackToENU).transpose();
-        Eigen::Vector3d ecefCar = rotEnuToEcef * (rotMatTrackToEnu * trans) + ecefRef;
+        Eigen::Vector3d enuCar = rotMatTrackToEnu * trans;
+
+        std::default_random_engine generator(noiseSeed);
+
+        std::normal_distribution<double> distX(errorMeanPosition.x(), errorSigmaPosition.x());
+        std::normal_distribution<double> distY(errorMeanPosition.y(), errorSigmaPosition.y());
+        std::normal_distribution<double> distZ(errorMeanPosition.z(), errorSigmaPosition.z());
+
+        std::normal_distribution<double> distXOr(errorMeanOrientation.x(), errorSigmaOrientation.x());
+        std::normal_distribution<double> distYOr(errorMeanOrientation.y(), errorSigmaOrientation.y());
+        std::normal_distribution<double> distZOr(errorMeanOrientation.z(), errorSigmaOrientation.z());
+
+        std::normal_distribution<double> distXVel(errorMeanVelocity.x(), errorSigmaVelocity.x());
+        std::normal_distribution<double> distYVel(errorMeanVelocity.y(), errorSigmaVelocity.y());
+        std::normal_distribution<double> distZVel(errorMeanVelocity.z(), errorSigmaVelocity.z());
+
+        enuCar.x() += distX(generator);
+        enuCar.y() += distY(generator);
+        enuCar.z() += distZ(generator);
+        Eigen::Vector3d ecefCar = rotEnuToEcef * enuCar + ecefRef;
+
         Eigen::Vector3d positionWgs = ecefToWgs84(ecefCar.x(), ecefCar.y(), ecefCar.z());
 
-        Eigen::Vector3d velENU = rotMatTrackToEnu * eulerAnglesToRotMat(rot) * velocity;
+        Eigen::Vector3d velENU
+            = rotMatTrackToEnu * eulerAnglesToRotMat(rot) * rigidBodyVelocity(velocity, this->position, omega);
 
-        // car->track->enu
+        // sensor->car->track->enu
+        quaternion q0 = quatFromEulerAngles(this->orientation);
         quaternion q1 = quatFromEulerAngles(rot);
         quaternion q2 = quatFromEulerAngles(rotTrackToENU);
-        quaternion q3 = quatMult(q2, q1);
+        quaternion q3 = quatMult(q2, quatMult(q1, q0));
+        // apply noise as additional rotation
+        quaternion q4
+            = quatFromEulerAngles(Eigen::Vector3d(distXOr(generator), distYOr(generator), distZOr(generator)));
+        quaternion q5 = quatMult(q4, q3);
+
+        quaternion outQuat = quatFromEulerAngles(Eigen::Vector3d(0.0, 0.0, 0.0));
+        if (this->orientationMode == 1)
+        {
+            Eigen::Matrix3d testMat = rotationMatrixFromQuaternion(q5);
+            Eigen::Vector3d testVec = testMat * Eigen::Vector3d(1, 0, 0);
+            double angleN = std::atan2(testVec.y(), testVec.x());
+            outQuat = quatFromEulerAngles(Eigen::Vector3d(0.0, 0.0, angleN));
+        }
+        else if (this->orientationMode == 2)
+        {
+            outQuat = q5;
+        }
 
         GnssData value;
         value.latitude = positionWgs.x();
         value.longitude = positionWgs.y();
         value.altitude = positionWgs.z();
+        value.position_covariance = this->errorSigmaPosition.asDiagonal();
+        value.position_covariance = value.position_covariance.array().square();
 
-        value.vel_east = velENU.x();
-        value.vel_north = velENU.y();
-        value.vel_up = velENU.z();
+        if (this->outputVelocity)
+        {
+            value.vel_east = velENU.x() + distXVel(generator);
+            value.vel_north = velENU.y() + distYVel(generator);
+            value.vel_up = velENU.z() + distZVel(generator);
+            value.velocity_covariance = this->errorSigmaVelocity.asDiagonal();
+            value.velocity_covariance = value.velocity_covariance.array().square();
+        }
+        else
+        {
+            value.vel_east = 0.0;
+            value.vel_north = 0.0;
+            value.vel_up = 0.0;
+            value.velocity_covariance(0, 0) = -1.0;
+            value.velocity_covariance(1, 1) = -1.0;
+            value.velocity_covariance(2, 2) = -1.0;
+        }
 
-        value.orientation = q3;
+        value.orientation = outQuat;
+        value.orientation_covariance = this->errorSigmaOrientation.asDiagonal();
+        value.orientation_covariance = value.orientation_covariance.array().square();
+
+        value.fix_status = GnssData::FixStatus::FIX;
+
+        value.timestamp = time;
+        value.frame = this->frame_id;
+
+        noiseSeed += 1;
 
         this->deadTimeQueue.push(value);
         this->registerSampling();

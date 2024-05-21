@@ -98,12 +98,23 @@ struct GnssData
     double latitude;
     double longitude;
     double altitude;
+    Eigen::Matrix3d position_covariance;
 
     double vel_east;
     double vel_north;
     double vel_up;
+    Eigen::Matrix3d velocity_covariance;
 
     quaternion orientation;
+    Eigen::Matrix3d orientation_covariance;
+
+    enum FixStatus
+    {
+        NO_FIX = -1,
+        FIX = 0
+    };
+
+    FixStatus fix_status;
 
     double timestamp;
     std::string frame;

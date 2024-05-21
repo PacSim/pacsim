@@ -64,7 +64,6 @@ rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringRearPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr wheelspeedPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr torquesPub;
 rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointStatePublisher;
-rclcpp::Publisher<pacsim::msg::GNSS>::SharedPtr gpsPub;
 
 std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
 
@@ -76,6 +75,7 @@ std::map<std::shared_ptr<PerceptionSensor>, std::shared_ptr<LandmarksMarkerWrapp
 std::map<std::shared_ptr<PerceptionSensor>, rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr>
     perceptionSensorVizPublisherMap;
 std::map<std::shared_ptr<ImuSensor>, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> imuPublisherMap;
+std::map<std::shared_ptr<GnssSensor>, rclcpp::Publisher<pacsim::msg::GNSS>::SharedPtr> gnssPublisherMap;
 
 DeadTime<double> deadTimeSteeringFront(0.0);
 DeadTime<double> deadTimeSteeringRear(0.0);
@@ -100,6 +100,7 @@ double realtimeRatio = 1.0;
 MainConfig mainConfig;
 std::vector<std::shared_ptr<PerceptionSensor>> perceptionSensors;
 std::vector<std::shared_ptr<ImuSensor>> imus;
+std::vector<std::shared_ptr<GnssSensor>> gnssSensors;
 std::shared_ptr<CompetitionLogic> cl;
 
 std::shared_ptr<ImuSensor> imuSensor;
@@ -149,8 +150,6 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     bool finish = false;
     std::mutex mtxClockTrigger;
     std::unique_lock<std::mutex> lockClockTrigger(mtxClockTrigger);
-
-    std::shared_ptr<GnssSensor> gps = std::make_shared<GnssSensor>(50.0, 0.05);
 
     while (rclcpp::ok() && !(finish))
     {
@@ -244,11 +243,16 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
             steeringRearPub->publish(msg);
         }
 
-        if (gps->RunTick(lms.gnssOrigin, lms.enuToTrackRotation, t, rEulerAngles, simTime, model->getVelocity()))
+        for (auto& gnss : gnssSensors)
         {
-            auto gpsData = gps->getOldest();
-            auto gpsMsg = createRosGnssMessage(gpsData);
-            gpsPub->publish(gpsMsg);
+
+            if (gnss->RunTick(lms.gnssOrigin, lms.enuToTrackRotation, t, rEulerAngles, simTime, model->getVelocity(),
+                    model->getAngularVelocity()))
+            {
+                auto gnssData = gnss->getOldest();
+                auto gnssMsg = createRosGnssMessage(gnssData);
+                gnssPublisherMap[gnss]->publish(gnssMsg);
+            }
         }
 
         for (auto& perceptionSensor : perceptionSensors)
@@ -422,6 +426,16 @@ void initSensors()
     Config cfg(sensors_config_path);
     auto sensorsConfig = cfg.getElement("sensors");
 
+    auto gnssConfigs = sensorsConfig.getElement("gnssSensors");
+    std::vector<ConfigElement> gnssSensorConfigs;
+    gnssConfigs.getElements(&gnssSensorConfigs);
+    for (auto& sensor : gnssSensorConfigs)
+    {
+        std::shared_ptr<GnssSensor> gnssSensor = std::make_shared<GnssSensor>();
+        gnssSensor->readConfig(sensor);
+        gnssSensors.push_back(gnssSensor);
+    }
+
     auto imuConfigs = sensorsConfig.getElement("imus");
     std::vector<ConfigElement> sensors;
     imuConfigs.getElements(&sensors);
@@ -551,14 +565,18 @@ int main(int argc, char** argv)
         auto pub = node->create_publisher<sensor_msgs::msg::Imu>("/pacsim/imu/" + i->getName(), 3);
         imuPublisherMap[i] = pub;
     }
+    for (auto& i : gnssSensors)
+    {
+        auto pub = node->create_publisher<pacsim::msg::GNSS>("/pacsim/gnss/" + i->getName(), 3);
+        gnssPublisherMap[i] = pub;
+    }
+
     steeringFrontPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/steeringFront", 1);
     steeringRearPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/steeringRear", 1);
     wheelspeedPub = node->create_publisher<pacsim::msg::Wheels>("/pacsim/wheelspeeds", 1);
     torquesPub = node->create_publisher<pacsim::msg::Wheels>("/pacsim/torques", 1);
 
     jointStatePublisher = node->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 3);
-
-    gpsPub = node->create_publisher<pacsim::msg::GNSS>("/pacsim/gnss", 1);
 
     model = std::make_shared<VehicleModelBicycle>();
     Config modelConfig(vehicle_model_config_path);

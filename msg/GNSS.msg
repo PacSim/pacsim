@@ -12,6 +12,7 @@ float64 latitude
 float64 longitude
 # Altitude [m]. Positive is above the WGS 84 ellipsoid
 float64 altitude
+# covariance in ENU coordinates
 float64[9] position_covariance
 
 # relative to ENU plane
