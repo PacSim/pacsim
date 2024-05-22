@@ -38,3 +38,26 @@ sensors:
       error_rot:
         mean: 0.0
         sigma: 0.001
+  gnssSensors:
+  - gnss:
+    name: "gnss_front"
+    frame: "gnss_front"
+    pose:
+      position: [0.66,0.0,0.64]
+      orientation: [0.0,0.0,0.0]
+    rate: 20
+    delay: 
+      mean: 0.05
+    features:
+      velocity: true
+      orientation: 0 # 0 : no orientaiton, 1 : heading only, 2 : full orientation
+    noise:
+      position: # enu plane
+        mean: [0.0, 0.0, 0.0]
+        sigma: [0.03, 0.03, 1.3]
+      velocity: # enu plane
+        mean: [0.0, 0.0, 0.0]
+        sigma: [0.02, 0.02, 0.02]
+      orientation: # enu plane
+        mean: [0.0, 0.0, 0.0]
+        sigma: [0.02, 0.02, 0.02]
