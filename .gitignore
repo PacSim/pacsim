@@ -5,6 +5,5 @@
 *.db3
 
 
-!.gitkeep
 !.vscode/settings.json
 !.vscode/c_cpp_properties.json
