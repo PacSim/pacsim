@@ -10,7 +10,15 @@ To configurure parameters of the simulator:
 
 ## Running the simulator
 
-To run the simulator, simply use one of the launch files present in the [launch folder](../launch/):
+The simulator is inside a docker container, which by running it, the simulator will also be launched. To do this, run the following command on your terminal:
+
+```bash
+docker compose up
+```
+
+In case you want to do some work inside the container, by using the Dev Containers extension in VSCode the process becomes very simple, since the system is already setup for that.
+
+Inside the devcontainer, in order to run the simulator, simply use one of the launch files present in the [launch folder](../launch/):
 
 ```sh
 colcon build # if you haven't compiled yet
@@ -20,12 +28,17 @@ ros2 launch pacsim example.launch.py
 
 ## Visualization
 
-Use Foxglove (or Rviz) for visualization purposes. TODO: create Foxglove dashboard for pacsim
+For visualization, either Rviz or Foxglove can be used, the later needing to run the foxglove bridge in order to work.
 
-## Track Generation
+## Track
+
+The simulator already has comes with some tracks, used in different events of the competitions (acceleration, skidpad...).
+
+### Track generator
 
 Checkout the track generator in the [track editor folder](../track_editor/).
 
-## Other tools
+
+### Other tools
 
 [Scrips folder](../scripts/) contains a tool for track convertion from fssim format to this one, as well as a report evaluation tool.
