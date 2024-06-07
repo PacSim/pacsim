@@ -35,7 +35,7 @@ The sensors and vehicle model are configured using config files. Examples are pr
 
 The default vehicle model provided is rather simple and just meant to be a starting point. You are encouraged to integrate your own vehicle model by implementing the `IVehicleModel` class.
 
-More info in the [docs folder](./doc/usage_tutorial.md).
+For info on how to run the docker container and how to develop code around it, check the [docs folder](./doc/docker_usage.md).
 
 # Contributing
 Contributions in any form (reports, feedback, requests, submissions) are welcome. Preferably create an Issue or Pull request for that.

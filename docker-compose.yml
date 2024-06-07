@@ -1,6 +1,7 @@
 services:
   pacsim:
     container_name: pacsim-container
+    image: pacsim-pacsim
     build:
       context: .
       dockerfile: .devcontainer/Dockerfile
@@ -31,10 +32,10 @@ services:
       - type: bind
         source: "./cache/iron-ros-base-jammy/log"
         target: "/home/ws/log"
-    ports:
-      - "8765:8765"
     network_mode: host
     ipc: host
     pid: host
     command: > 
       bash -c "cd /home/ws/ && ./entrypoint.sh"
+
+

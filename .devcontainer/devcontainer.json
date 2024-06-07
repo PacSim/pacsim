@@ -37,8 +37,7 @@
         "--net=host",
         "--ipc=host",
         "--pid=host",
-        "-e", "DISPLAY=${env:DISPLAY}",
-        "-p", "8765:8765"
+        "-e", "DISPLAY=${env:DISPLAY}"
     ],
     "mounts": [
        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",

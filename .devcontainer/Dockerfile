@@ -32,11 +32,9 @@ RUN apt update && apt upgrade -y \
     && pip install rosbags \
     && pip install PyQT5 \
     && apt install ros-$ROS_DISTRO-xacro -y \
-    && apt install ros-$ROS_DISTRO-foxglove-bridge -y \
     && apt clean
 
 RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /home/"$USERNAME"/.bashrc
-EXPOSE 8765
 ENV SHELL /bin/bash
 USER $USERNAME
 CMD ["/bin/bash"]
