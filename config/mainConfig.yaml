@@ -1,6 +1,6 @@
 pacsim:
   timeouts:
-    start: 300 # time to trigger first timekeeping gate -> CREATES ERROR
+    start: 60 # time to trigger first timekeeping gate
     acceleration: 25
     autocross: 300
     skidpad: 90
