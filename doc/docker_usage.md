@@ -8,6 +8,8 @@ The simulator is inside a docker container, which by running it, the simulator w
 docker compose up
 ```
 
+The *docker-compose.yml* file uses the same Docker image as the development container (Image in [.devcontainer folder](../.devcontainer)) and executes the [entrypoint.sh script](./entrypoint.sh) at startup.
+
 ## Code Development - Dev Container
 
 In case you want to do some work inside the container, by using the Dev Containers extension in VSCode the process becomes very simple, since there is a .devcontainer which contains the configuration for a development container for that purpose.
