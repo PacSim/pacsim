@@ -22,10 +22,6 @@ Install dependencies:
 
 `sudo apt install ros-iron-desktop ros-iron-xacro`
 
-## Docker Dev Container
-
-A [Dockerfile](./.devcontainer/Dockerfile) is configured that already contains all the dependencies. It can be used with a [dev container environment](./.devcontainer) or launched independently wiht the [docker-compose](./docker-compose.yml) file, which uses the same Docker image and executes the [entrypoint.sh script](./entrypoint.sh) at startup.
-
 # How to get started
 To use PacSim with your autonomous system, you need to create a message converter node to match your own interfaces with the simulator.
 
@@ -35,7 +31,9 @@ The sensors and vehicle model are configured using config files. Examples are pr
 
 The default vehicle model provided is rather simple and just meant to be a starting point. You are encouraged to integrate your own vehicle model by implementing the `IVehicleModel` class.
 
-For info on how to run the docker container and how to develop code around it, check the [docs folder](./doc/docker_usage.md).
+## Docker Dev Container
+
+A [Dockerfile](./.devcontainer/Dockerfile) is configured that already contains all the dependencies. It can be used with a [dev container environment](./.devcontainer) or launched independently wiht the [docker-compose](./docker-compose.yml) file. For more info, check the [docs folder](./doc/docker_usage.md).
 
 # Contributing
 Contributions in any form (reports, feedback, requests, submissions) are welcome. Preferably create an Issue or Pull request for that.
