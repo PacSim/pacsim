@@ -23,3 +23,10 @@ Then you need to create some cache folders. This can be done by running the foll
 Finally do Ctrl + Shift + P and choose the option:
 
 - Dev Containers: Rebuild and Reopen in container
+
+## General Notes
+
+For the simulator to communicate with your system, make sure to set the ROS Domain ID to the same value in both systems:
+```sh
+export ROS_DOMAIN_ID=42
+```
