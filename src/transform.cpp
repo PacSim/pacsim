@@ -11,30 +11,29 @@ Eigen::Vector3d rigidBodyAcceleration(
     return (a + omega.cross(omega.cross(r)) + alpha.cross(r));
 }
 
-Eigen::Vector3d inverseTranslation(Eigen::Vector3d trans, Eigen::Vector3d rot)
+Eigen::Matrix3d eulerAnglesToRotMat(Eigen::Vector3d& angles)
 {
-    Eigen::AngleAxisd rollAngle(-rot.x(), Eigen::Vector3d::UnitX());
-    Eigen::AngleAxisd yawAngle(-rot.z(), Eigen::Vector3d::UnitZ());
-    Eigen::AngleAxisd pitchAngle(-rot.y(), Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd rollAngle(-angles.x(), Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd yawAngle(-angles.z(), Eigen::Vector3d::UnitZ());
+    Eigen::AngleAxisd pitchAngle(-angles.y(), Eigen::Vector3d::UnitY());
 
     // rotation order matches with tf2
     Eigen::Quaternion<double> q = rollAngle * pitchAngle * yawAngle;
 
     Eigen::Matrix3d rotationMatrix = q.matrix();
+    return rotationMatrix;
+}
+
+Eigen::Vector3d inverseTranslation(Eigen::Vector3d trans, Eigen::Vector3d rot)
+{
+    Eigen::Matrix3d rotationMatrix = eulerAnglesToRotMat(rot);
 
     return (-rotationMatrix * trans);
 }
 
 LandmarkList transformLmList(LandmarkList& in, Eigen::Vector3d trans, Eigen::Vector3d rot)
 {
-    Eigen::AngleAxisd rollAngle(-rot.x(), Eigen::Vector3d::UnitX());
-    Eigen::AngleAxisd yawAngle(-rot.z(), Eigen::Vector3d::UnitZ());
-    Eigen::AngleAxisd pitchAngle(-rot.y(), Eigen::Vector3d::UnitY());
-
-    // rotation order matches with tf2
-    Eigen::Quaternion<double> q = rollAngle * pitchAngle * yawAngle;
-
-    Eigen::Matrix3d rotationMatrix = q.matrix();
+    Eigen::Matrix3d rotationMatrix = eulerAnglesToRotMat(rot);
     Eigen::Vector3d transInverse = inverseTranslation(trans, rot);
 
     LandmarkList out;

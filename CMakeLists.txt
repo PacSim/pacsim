@@ -33,6 +33,7 @@ rosidl_generate_interfaces(
   "msg/Wheels.msg"
   "msg/PerceptionDetection.msg"
   "msg/PerceptionDetections.msg"
+  "msg/GNSS.msg"
   "srv/ClockTriggerAbsolute.srv"
   "srv/ClockTriggerRelative.srv"
   DEPENDENCIES

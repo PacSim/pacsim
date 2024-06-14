@@ -13,6 +13,7 @@
 #include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <tf2/LinearMath/Quaternion.h>
+#include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 
 #include "VehicleModel/VehicleModelBicycle.cpp"
@@ -47,6 +48,8 @@
 
 #include "reportWriter.hpp"
 
+#include "sensorModels/gnssSensor.hpp"
+
 // DynamicDoubleTrackModel7Dof model;
 std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor;
 std::shared_ptr<IVehicleModel> model;
@@ -62,6 +65,8 @@ rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr wheelspeedPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr torquesPub;
 rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointStatePublisher;
 
+std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
+
 rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr perceptionVizPub;
 std::vector<rclcpp::Publisher<pacsim::msg::PerceptionDetections>::SharedPtr> lms_pubs;
 std::map<std::shared_ptr<PerceptionSensor>, rclcpp::Publisher<pacsim::msg::PerceptionDetections>::SharedPtr>
@@ -70,6 +75,7 @@ std::map<std::shared_ptr<PerceptionSensor>, std::shared_ptr<LandmarksMarkerWrapp
 std::map<std::shared_ptr<PerceptionSensor>, rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr>
     perceptionSensorVizPublisherMap;
 std::map<std::shared_ptr<ImuSensor>, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> imuPublisherMap;
+std::map<std::shared_ptr<GnssSensor>, rclcpp::Publisher<pacsim::msg::GNSS>::SharedPtr> gnssPublisherMap;
 
 DeadTime<double> deadTimeSteeringFront(0.0);
 DeadTime<double> deadTimeSteeringRear(0.0);
@@ -94,6 +100,7 @@ double realtimeRatio = 1.0;
 MainConfig mainConfig;
 std::vector<std::shared_ptr<PerceptionSensor>> perceptionSensors;
 std::vector<std::shared_ptr<ImuSensor>> imus;
+std::vector<std::shared_ptr<GnssSensor>> gnssSensors;
 std::shared_ptr<CompetitionLogic> cl;
 
 std::shared_ptr<ImuSensor> imuSensor;
@@ -111,10 +118,6 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
 
     std::unique_ptr<tf2_ros::TransformBroadcaster> br = std::make_unique<tf2_ros::TransformBroadcaster>(node);
 
-    /*
-    auto static_broadcaster = std::make_shared<rclcpp::Node>("static_broadcaster");
-    std::unique_ptr<tf2_ros::TransformBroadcaster> brstatic =
-    std::make_unique<tf2_ros::TransformBroadcaster>(static_broadcaster);*/
     double timestep = 1.0 / 1000.0;
     double egoMotionSensorRate = 200.0;
     double lastEgoMotionSensorSampleTime = 0.0;
@@ -163,7 +166,6 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
             = createRosTransformMsg(t, rEulerAngles, trackFrame, "car", simTime);
 
         br->sendTransform(transformStamped);
-        // brstatic->sendTransform(static_transform);
 
         if (deadTimeSteeringFront.availableDeadTime(simTime))
         {
@@ -239,6 +241,18 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
             msg.value = steeringData.data;
             msg.stamp = rclcpp::Time(static_cast<uint64_t>(steeringData.timestamp * 1e9));
             steeringRearPub->publish(msg);
+        }
+
+        for (auto& gnss : gnssSensors)
+        {
+
+            if (gnss->RunTick(lms.gnssOrigin, lms.enuToTrackRotation, t, rEulerAngles, simTime, model->getVelocity(),
+                    model->getAngularVelocity()))
+            {
+                auto gnssData = gnss->getOldest();
+                auto gnssMsg = createRosGnssMessage(gnssData);
+                gnssPublisherMap[gnss]->publish(gnssMsg);
+            }
         }
 
         for (auto& perceptionSensor : perceptionSensors)
@@ -412,6 +426,16 @@ void initSensors()
     Config cfg(sensors_config_path);
     auto sensorsConfig = cfg.getElement("sensors");
 
+    auto gnssConfigs = sensorsConfig.getElement("gnssSensors");
+    std::vector<ConfigElement> gnssSensorConfigs;
+    gnssConfigs.getElements(&gnssSensorConfigs);
+    for (auto& sensor : gnssSensorConfigs)
+    {
+        std::shared_ptr<GnssSensor> gnssSensor = std::make_shared<GnssSensor>();
+        gnssSensor->readConfig(sensor);
+        gnssSensors.push_back(gnssSensor);
+    }
+
     auto imuConfigs = sensorsConfig.getElement("imus");
     std::vector<ConfigElement> sensors;
     imuConfigs.getElements(&sensors);
@@ -448,6 +472,9 @@ MainConfig fillMainConfig(std::string path)
     config["timeouts"].getElement<double>(&ret.timeout_trackdrive_first, "trackdrive_first");
     config["timeouts"].getElement<double>(&ret.timeout_trackdrive_total, "trackdrive_total");
 
+    config.getElement<std::string>(&ret.cog_frame_id_pipeline, "cog_frame_id_pipeline");
+    config.getElement<bool>(&ret.broadcast_sensors_tf2, "broadcast_sensors_tf2");
+
     config.getElement<bool>(&ret.oc_detect, "oc_detect");
     config.getElement<bool>(&ret.doo_detect, "doo_detect");
     config.getElement<bool>(&ret.uss_detect, "uss_detect");
@@ -457,10 +484,41 @@ MainConfig fillMainConfig(std::string path)
     return ret;
 }
 
+void handleTf2StaticTransforms()
+{
+    if (mainConfig.broadcast_sensors_tf2)
+    {
+
+        for (auto sensor : perceptionSensors)
+        {
+            geometry_msgs::msg::TransformStamped t;
+
+            t.header.stamp = rclcpp::Time(0, 0);
+            t.header.frame_id = mainConfig.cog_frame_id_pipeline;
+            t.child_frame_id = sensor->getFrameId();
+
+            auto translation = sensor->getPosition();
+            auto orientation = sensor->getOrientation();
+            t.transform.translation.x = translation.x();
+            t.transform.translation.y = translation.y();
+            t.transform.translation.z = translation.z();
+            tf2::Quaternion q;
+            q.setRPY(orientation.x(), orientation.y(), orientation.z());
+            t.transform.rotation.x = q.x();
+            t.transform.rotation.y = q.y();
+            t.transform.rotation.z = q.z();
+            t.transform.rotation.w = q.w();
+
+            tf_static_broadcaster_->sendTransform(t);
+        }
+    }
+}
+
 int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<rclcpp::Node>("pacsim_node");
+    tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
     logger = std::make_shared<Logger>();
 
     auto latsub = node->create_subscription<pacsim::msg::StampedScalar>("/pacsim/steering_setpoint", 1, cbFuncLat);
@@ -488,6 +546,7 @@ int main(int argc, char** argv)
     mainConfig = fillMainConfig(main_config_path);
     initPerceptionSensors();
     initSensors();
+    handleTf2StaticTransforms();
     for (auto& i : perceptionSensors)
     {
         auto detectionsMarkersWrapper = std::make_shared<LandmarksMarkerWrapper>(0.8, "pacsim/" + i->getName());
@@ -506,6 +565,12 @@ int main(int argc, char** argv)
         auto pub = node->create_publisher<sensor_msgs::msg::Imu>("/pacsim/imu/" + i->getName(), 3);
         imuPublisherMap[i] = pub;
     }
+    for (auto& i : gnssSensors)
+    {
+        auto pub = node->create_publisher<pacsim::msg::GNSS>("/pacsim/gnss/" + i->getName(), 3);
+        gnssPublisherMap[i] = pub;
+    }
+
     steeringFrontPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/steeringFront", 1);
     steeringRearPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/steeringRear", 1);
     wheelspeedPub = node->create_publisher<pacsim::msg::Wheels>("/pacsim/wheelspeeds", 1);

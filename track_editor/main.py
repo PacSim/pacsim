@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from PyQt5.QtWidgets import QMenu
@@ -57,7 +58,7 @@ class Ui_MainWindow(object):
         self.MainWindow.setWindowTitle("Track editor")
 
         self.MainWindow.resize(800, 600)
-        self.MainWindow.setWindowIcon(QIcon('icon.png'))
+        self.MainWindow.setWindowIcon(QIcon('icons/icon.png'))
         self.centralwidget = QtWidgets.QWidget(self.MainWindow)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -225,7 +226,7 @@ class Ui_MainWindow(object):
       msgBox = QMessageBox(parent=self.MainWindow)
       msgBox.setText(statusString + "\n" + stringTrackLength + "\n" + stringTrackWidth + "\n" + stringOuterDiameter + "\n" + stringMaxLaneDistance)
       msgBox.setStandardButtons(QMessageBox.Ok)
-      msgBox.setWindowIcon(QIcon('icon.png'))
+      msgBox.setWindowIcon(QIcon('icons/icon.png'))
       msgBox.setWindowTitle("Rules check")
       msgBox.exec()
 

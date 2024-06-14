@@ -1,6 +1,7 @@
 #ifndef PACSIMTYPES_HPP
 #define PACSIMTYPES_HPP
 
+#include "quaternion.hpp"
 #include <Eigen/Core>
 #include <vector>
 
@@ -42,6 +43,8 @@ struct Track
     std::vector<Landmark> right_lane;
     std::vector<Landmark> unknown;
     std::vector<std::pair<Landmark, Landmark>> time_keeping_gates;
+    Eigen::Vector3d gnssOrigin;
+    Eigen::Vector3d enuToTrackRotation;
 };
 
 struct LandmarkList
@@ -85,6 +88,33 @@ struct ImuData
 
     Eigen::Matrix3d acc_cov;
     Eigen::Matrix3d rot_cov;
+
+    double timestamp;
+    std::string frame;
+};
+
+struct GnssData
+{
+    double latitude;
+    double longitude;
+    double altitude;
+    Eigen::Matrix3d position_covariance;
+
+    double vel_east;
+    double vel_north;
+    double vel_up;
+    Eigen::Matrix3d velocity_covariance;
+
+    quaternion orientation;
+    Eigen::Matrix3d orientation_covariance;
+
+    enum FixStatus
+    {
+        NO_FIX = -1,
+        FIX = 0
+    };
+
+    FixStatus fix_status;
 
     double timestamp;
     std::string frame;
@@ -160,6 +190,8 @@ struct MainConfig
     bool uss_detect;
     bool finish_validate;
     Discipline discipline;
+    std::string cog_frame_id_pipeline;
+    bool broadcast_sensors_tf2;
 };
 
 Discipline stringToDiscipline(const std::string& disciplineStr);

@@ -398,3 +398,34 @@ sensor_msgs::msg::JointState createRosJointMsg(
 
     return jointStamped;
 }
+
+pacsim::msg::GNSS createRosGnssMessage(const GnssData& data)
+{
+    pacsim::msg::GNSS msg;
+    msg.header.stamp = rclcpp::Time(static_cast<uint64_t>(data.timestamp * 1e9));
+    msg.status = data.fix_status;
+    msg.latitude = data.latitude;
+    msg.longitude = data.longitude;
+    msg.altitude = data.altitude;
+
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            msg.position_covariance[3 * i + j] = data.position_covariance(i, j);
+            msg.velocity_covariance[3 * i + j] = data.velocity_covariance(i, j);
+            msg.orientation_covariance[3 * i + j] = data.orientation_covariance(i, j);
+        }
+    }
+
+    msg.velocity_east = data.vel_east;
+    msg.velocity_north = data.vel_north;
+    msg.velocity_up = data.vel_up;
+
+    msg.orientation.w = data.orientation.w;
+    msg.orientation.x = data.orientation.x;
+    msg.orientation.y = data.orientation.y;
+    msg.orientation.z = data.orientation.z;
+
+    return msg;
+}
