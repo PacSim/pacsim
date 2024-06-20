@@ -92,13 +92,13 @@ public:
         double avgRatio = 0.5 * (this->innerSteeringRatio + this->outerSteeringRatio);
         if (in > 0)
         {
-            this->steeringAngles.FL = this->innerSteeringRatio * in;
-            this->steeringAngles.FR = this->outerSteeringRatio * in;
+            this->steeringAngles.FL = this->innerSteeringRatio * in / avgRatio;
+            this->steeringAngles.FR = this->outerSteeringRatio * in / avgRatio;
         }
         else
         {
-            this->steeringAngles.FL = this->outerSteeringRatio * in;
-            this->steeringAngles.FR = this->innerSteeringRatio * in;
+            this->steeringAngles.FL = this->outerSteeringRatio * in / avgRatio;
+            this->steeringAngles.FR = this->innerSteeringRatio * in / avgRatio;
         }
         return;
     }
