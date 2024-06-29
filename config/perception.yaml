@@ -10,7 +10,7 @@ perception_sensors:
       orientation: [0.0,0.0,0.0]
     observation:
       min_range: 1
-      max_range: 45
+      max_range: 20
       min_angle_horizontal: -1.0472
       max_angle_horizontal: 1.0472
       min_angle_vertical: -0.2181662
@@ -18,8 +18,8 @@ perception_sensors:
 
     detection:
       prob_min_dist: 0.99
-      prob_decrease_dist_linear: 0.01
-      prob_decrease_dist_quadratic: 0.00012
+      prob_decrease_dist_linear: 0.001
+      prob_decrease_dist_quadratic: 0.000012
       min_prob: 0.1
 
     classification:
