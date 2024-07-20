@@ -42,6 +42,7 @@ public:
         configModel.getElement<double>(&this->gearRatio, "gearRatio");
         configModel.getElement<double>(&this->innerSteeringRatio, "innerSteeringRatio");
         configModel.getElement<double>(&this->innerSteeringRatio, "innerSteeringRatio");
+        configModel.getElement<double>(&this->nominalVoltageTS, "nominalVoltageTS");
         return true;
     }
 
@@ -67,6 +68,20 @@ public:
     {
         return (this->steeringAngles.FL > 0) ? this->steeringAngles.FL / this->innerSteeringRatio
                                              : this->steeringAngles.FL / this->outerSteeringRatio;
+    }
+
+    double getVoltageTS() { return this->nominalVoltageTS; }
+
+    double getCurrentTS()
+    {
+        double powerCoeff = 1.0 / 9.55;
+        double powerFL = this->torques.FL * this->wheelspeeds.FL * powerCoeff;
+        double powerFR = this->torques.FR * this->wheelspeeds.FR * powerCoeff;
+        double powerRL = this->torques.RL * this->wheelspeeds.RL * powerCoeff;
+        double powerRR = this->torques.RR * this->wheelspeeds.RR * powerCoeff;
+        double totalPower = (powerFL + powerFR + powerRL + powerRR);
+
+        return (totalPower / this->nominalVoltageTS);
     }
 
     Wheels getWheelspeeds() { return this->wheelspeeds; }
@@ -268,6 +283,7 @@ private:
     double gearRatio = 12.23;
     double innerSteeringRatio = 0.255625;
     double outerSteeringRatio = 0.20375;
+    double nominalVoltageTS = 550.0;
 
     Wheels minTorques = { -0.0, -0.0, -0.0, -0.0 };
     Wheels maxTorques = { 0.0, 0.0, 0.0, 0.0 };

@@ -20,6 +20,8 @@ public:
     virtual Wheels getTorques() = 0;
     virtual Wheels getWheelOrientations() = 0;
     virtual double getSteeringWheelAngle() = 0;
+    virtual double getVoltageTS() = 0;
+    virtual double getCurrentTS() = 0;
     virtual bool readConfig(ConfigElement& config) = 0;
 
     virtual void setTorques(Wheels in) = 0;

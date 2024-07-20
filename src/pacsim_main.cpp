@@ -63,6 +63,9 @@ rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringFrontPub;
 rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringRearPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr wheelspeedPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr torquesPub;
+rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr voltageSensorTSPub;
+rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr currentSensorTSPub;
+
 rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointStatePublisher;
 
 std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
@@ -108,6 +111,9 @@ std::shared_ptr<ScalarValueSensor> steeringSensorFront;
 std::shared_ptr<ScalarValueSensor> steeringSensorRear;
 std::shared_ptr<WheelsSensor> wheelspeedSensor;
 std::shared_ptr<WheelsSensor> torquesSensor;
+std::shared_ptr<ScalarValueSensor> currentSensorTS;
+std::shared_ptr<ScalarValueSensor> voltageSensorTS;
+
 std::shared_ptr<Logger> logger;
 
 std::condition_variable cvClockTrigger;
@@ -241,6 +247,28 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
             msg.value = steeringData.data;
             msg.stamp = rclcpp::Time(static_cast<uint64_t>(steeringData.timestamp * 1e9));
             steeringRearPub->publish(msg);
+        }
+
+        double voltageTsCurr = model->getVoltageTS();
+        StampedScalar voltageTSData { voltageTsCurr, simTime };
+        if (voltageSensorTS->RunTick(voltageTSData, simTime))
+        {
+            StampedScalar voltageData = voltageSensorTS->getOldest();
+            pacsim::msg::StampedScalar msg;
+            msg.value = voltageData.data;
+            msg.stamp = rclcpp::Time(static_cast<uint64_t>(voltageData.timestamp * 1e9));
+            voltageSensorTSPub->publish(msg);
+        }
+
+        double currentTsCurr = model->getCurrentTS();
+        StampedScalar currentTSData { currentTsCurr, simTime };
+        if (currentSensorTS->RunTick(currentTSData, simTime))
+        {
+            StampedScalar currentData = currentSensorTS->getOldest();
+            pacsim::msg::StampedScalar msg;
+            msg.value = currentData.data;
+            msg.stamp = rclcpp::Time(static_cast<uint64_t>(currentData.timestamp * 1e9));
+            currentSensorTSPub->publish(msg);
         }
 
         for (auto& gnss : gnssSensors)
@@ -455,6 +483,13 @@ void initSensors()
     wheelspeedSensor = std::make_shared<WheelsSensor>(200.0, 0.005);
     wheelspeedSensor->readConfig(wheelSpeedConfig);
 
+    voltageSensorTS = std::make_shared<ScalarValueSensor>(200.0, 0.005);
+    auto voltageTSConfig = sensorsConfig.getElement("voltage_ts");
+    voltageSensorTS->readConfig(voltageTSConfig);
+    currentSensorTS = std::make_shared<ScalarValueSensor>(200.0, 0.005);
+    auto currentTSConfig = sensorsConfig.getElement("current_ts");
+    currentSensorTS->readConfig(currentTSConfig);
+
     auto torquesConfig = sensorsConfig.getElement("wheelspeeds");
     torquesSensor = std::make_shared<WheelsSensor>(200.0, 0.005);
     torquesSensor->readConfig(torquesConfig);
@@ -573,6 +608,9 @@ int main(int argc, char** argv)
 
     steeringFrontPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/steeringFront", 1);
     steeringRearPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/steeringRear", 1);
+    voltageSensorTSPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/ts/voltage", 1);
+    currentSensorTSPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/ts/current", 1);
+
     wheelspeedPub = node->create_publisher<pacsim::msg::Wheels>("/pacsim/wheelspeeds", 1);
     torquesPub = node->create_publisher<pacsim::msg::Wheels>("/pacsim/torques", 1);
 
