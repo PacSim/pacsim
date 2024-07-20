@@ -44,6 +44,7 @@ public:
         configModel.getElement<double>(&this->innerSteeringRatio, "innerSteeringRatio");
         configModel.getElement<double>(&this->nominalVoltageTS, "nominalVoltageTS");
         configModel.getElement<double>(&this->powerGroundForce, "powerGroundForce");
+        configModel.getElement<double>(&this->powertrainEfficiency, "powertrainEfficiency");
 
         return true;
     }
@@ -81,7 +82,7 @@ public:
         double powerFR = this->torques.FR * this->wheelspeeds.FR * powerCoeff;
         double powerRL = this->torques.RL * this->wheelspeeds.RL * powerCoeff;
         double powerRR = this->torques.RR * this->wheelspeeds.RR * powerCoeff;
-        double totalPower = (powerFL + powerFR + powerRL + powerRR);
+        double totalPower = (powerFL + powerFR + powerRL + powerRR) / powertrainEfficiency;
 
         return (totalPower / this->nominalVoltageTS);
     }
@@ -291,6 +292,7 @@ private:
     double nominalVoltageTS = 550.0;
     double powerGroundSetpoint = 0.0;
     double powerGroundForce = 700.0;
+    double powertrainEfficiency = 1.0;
 
     Wheels minTorques = { -0.0, -0.0, -0.0, -0.0 };
     Wheels maxTorques = { 0.0, 0.0, 0.0, 0.0 };

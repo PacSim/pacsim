@@ -23,3 +23,4 @@ vehicle_model:
     outerSteeringRaito: 0.20375
     nominalVoltageTS: 550.0
     powerGroundForce: 700.0
+    powertrainEfficiency: 0.95
