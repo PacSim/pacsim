@@ -43,6 +43,8 @@ public:
         configModel.getElement<double>(&this->innerSteeringRatio, "innerSteeringRatio");
         configModel.getElement<double>(&this->innerSteeringRatio, "innerSteeringRatio");
         configModel.getElement<double>(&this->nominalVoltageTS, "nominalVoltageTS");
+        configModel.getElement<double>(&this->powerGroundForce, "powerGroundForce");
+
         return true;
     }
 
@@ -102,6 +104,8 @@ public:
 
     void setSteeringSetpointRear(double in) { return; }
 
+    void setPowerGroundSetpoint(double in) { this->powerGroundSetpoint = std::min(std::max(in, 0.0), 1.0); }
+
     void setSteeringFront(double in)
     {
         double avgRatio = 0.5 * (this->innerSteeringRatio + this->outerSteeringRatio);
@@ -136,7 +140,8 @@ public:
         double ay = this->acceleration.y();
         double r = this->angularVelocity.z();
         // Downforce
-        double F_aero_downforce = 0.5 * 1.29 * this->aeroArea * this->cla * (vx * vx);
+        double F_aero_downforce
+            = 0.5 * 1.29 * this->aeroArea * this->cla * (vx * vx) + this->powerGroundSetpoint * this->powerGroundForce;
         double F_aero_drag = 0.5 * 1.29 * this->aeroArea * this->cda * (vx * vx);
         double g = 9.81;
         double steeringFront = 0.5 * (this->steeringAngles.FL + this->steeringAngles.FR);
@@ -284,6 +289,8 @@ private:
     double innerSteeringRatio = 0.255625;
     double outerSteeringRatio = 0.20375;
     double nominalVoltageTS = 550.0;
+    double powerGroundSetpoint = 0.0;
+    double powerGroundForce = 700.0;
 
     Wheels minTorques = { -0.0, -0.0, -0.0, -0.0 };
     Wheels maxTorques = { 0.0, 0.0, 0.0, 0.0 };

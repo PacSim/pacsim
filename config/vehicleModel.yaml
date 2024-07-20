@@ -22,3 +22,4 @@ vehicle_model:
     innerSteeringRatio: 0.255625
     outerSteeringRaito: 0.20375
     nominalVoltageTS: 550.0
+    powerGroundForce: 700.0

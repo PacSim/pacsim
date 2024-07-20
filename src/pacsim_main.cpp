@@ -86,6 +86,7 @@ DeadTime<Wheels> deadTimeTorques(0.0);
 DeadTime<Wheels> deadTimeWspdSetpoints(0.0);
 DeadTime<Wheels> deadTimeMaxTorques(0.0);
 DeadTime<Wheels> deadTimeMinTorques(0.0);
+DeadTime<double> deadTimePowerGroundSetpoint(0.0);
 
 std::mutex mutexSimTime;
 
@@ -148,6 +149,8 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     deadTimeWspdSetpoints = DeadTime<Wheels>(0.02);
     deadTimeMaxTorques = DeadTime<Wheels>(0.02);
     deadTimeMinTorques = DeadTime<Wheels>(0.02);
+    deadTimePowerGroundSetpoint = DeadTime<double>(0.05);
+
     double current_wheel_speed_angle = 0.0;
 
     auto nextLoopTime = std::chrono::steady_clock::now();
@@ -202,6 +205,11 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
         {
             Wheels val = deadTimeMinTorques.getOldest();
             model->setMinTorques(val);
+        }
+        if (deadTimePowerGroundSetpoint.availableDeadTime(simTime))
+        {
+            double val = deadTimePowerGroundSetpoint.getOldest();
+            model->setPowerGroundSetpoint(val);
         }
 
         if (simTime >= (lastEgoMotionSensorSampleTime + 1 / egoMotionSensorRate))
@@ -389,6 +397,12 @@ void cbWheelspeeds(const pacsim::msg::Wheels& msg)
     deadTimeWspdSetpoints.addVal(w, simTime);
 }
 
+void cbPowerGround(const pacsim::msg::StampedScalar& msg)
+{
+    std::lock_guard<std::mutex> l(mutexSimTime);
+    deadTimePowerGroundSetpoint.addVal(msg.value, simTime);
+}
+
 void cbFinishSignal(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
     std::shared_ptr<std_srvs::srv::Empty::Response> response)
 {
@@ -564,6 +578,9 @@ int main(int argc, char** argv)
 
     auto wspdSetpointSub
         = node->create_subscription<pacsim::msg::Wheels>("/pacsim/wheelspeed_setpoints", 1, cbWheelspeeds);
+
+    auto powerGroundSetpointSub
+        = node->create_subscription<pacsim::msg::StampedScalar>("/pacsim/powerground_setpoint", 1, cbPowerGround);
 
     velocity_pub = node->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("/pacsim/velocity", 3);
 
