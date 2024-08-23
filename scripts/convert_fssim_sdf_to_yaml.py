@@ -101,6 +101,9 @@ def write_to_yaml(cones: dict, file_path: str) -> None:
 			"start": OrderedDict({
 					"position": f'[{start_position[0]}, {start_position[1]}, {start_position[2]}]',
 					"orientation": f'[{start_orientation[0]}, {start_orientation[1]}, {start_orientation[2]}]'}),
+      "earthToTrack": OrderedDict({
+					"position": f'[{0.0}, {0.0}, {0.0}]',
+					"orientation": f'[{0.0}, {0.0}, {0.0}]'}),
 			"left": left,
 			"right": right,
 			"time_keeping": time_keeping,
