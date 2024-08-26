@@ -16,4 +16,6 @@ Eigen::Vector3d inverseTranslation(Eigen::Vector3d trans, Eigen::Vector3d rot);
 
 LandmarkList transformLmList(LandmarkList& in, Eigen::Vector3d trans, Eigen::Vector3d rot);
 
+Track transformTrack(Track& in, Eigen::Vector3d trans, Eigen::Vector3d rot);
+
 #endif /* PACSIMTRANSFORM_HPP */

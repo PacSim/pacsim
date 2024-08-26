@@ -192,6 +192,7 @@ struct MainConfig
     Discipline discipline;
     std::string cog_frame_id_pipeline;
     bool broadcast_sensors_tf2;
+    bool pre_transform_track;
 };
 
 Discipline stringToDiscipline(const std::string& disciplineStr);

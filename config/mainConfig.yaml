@@ -13,3 +13,5 @@ pacsim:
 
   cog_frame_id_pipeline: "cog" # name of the cog frame in the autnomous pipeline
   broadcast_sensors_tf2: true
+
+  pre_transform_track: true # transform track such that starting pose also seems to be the origin of the track

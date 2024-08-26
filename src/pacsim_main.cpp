@@ -134,9 +134,20 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     Eigen::Vector3d start_position;
     Eigen::Vector3d start_orientation;
     Track lms = loadMap(trackName, start_position, start_orientation);
-    LandmarkList trackAsLMList = trackToLMList(lms);
+
     model->setPosition(start_position);
     model->setOrientation(start_orientation);
+
+    if (mainConfig.pre_transform_track)
+    {
+        lms = transformTrack(lms, start_position, start_orientation);
+        model->setPosition(Eigen::Vector3d::Zero());
+        model->setOrientation(Eigen::Vector3d::Zero());
+        start_position = Eigen::Vector3d::Zero();
+        start_orientation = Eigen::Vector3d::Zero();
+    }
+
+    LandmarkList trackAsLMList = trackToLMList(lms);
 
     LandmarksMarkerWrapper mapMarkersWrapper(0.8, "pacsim");
 
@@ -283,7 +294,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
         {
 
             if (gnss->RunTick(lms.gnssOrigin, lms.enuToTrackRotation, t, rEulerAngles, simTime, model->getVelocity(),
-                    model->getAngularVelocity()))
+                    model->getAngularVelocity(), start_position, start_orientation, mainConfig.pre_transform_track))
             {
                 auto gnssData = gnss->getOldest();
                 auto gnssMsg = createRosGnssMessage(gnssData);
@@ -528,6 +539,8 @@ MainConfig fillMainConfig(std::string path)
     config.getElement<bool>(&ret.doo_detect, "doo_detect");
     config.getElement<bool>(&ret.uss_detect, "uss_detect");
     config.getElement<bool>(&ret.finish_validate, "finish_validate");
+
+    config.getElement<bool>(&ret.pre_transform_track, "pre_transform_track");
 
     ret.discipline = stringToDiscipline(discipline);
     return ret;
