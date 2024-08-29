@@ -46,7 +46,6 @@ struct Track
     Eigen::Vector3d gnssOrigin;
     Eigen::Vector3d enuToTrackRotation;
 };
-
 struct LandmarkList
 {
     std::vector<Landmark> list;

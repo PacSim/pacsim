@@ -50,6 +50,8 @@
 
 #include "sensorModels/gnssSensor.hpp"
 
+#include "track/gripMap.hpp"
+
 // DynamicDoubleTrackModel7Dof model;
 std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor;
 std::shared_ptr<IVehicleModel> model;
@@ -91,6 +93,7 @@ DeadTime<double> deadTimePowerGroundSetpoint(0.0);
 std::mutex mutexSimTime;
 
 std::string trackName;
+std::string grip_map_path;
 std::string trackFrame;
 std::string report_file_dir;
 std::string main_config_path;
@@ -171,12 +174,17 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     std::mutex mtxClockTrigger;
     std::unique_lock<std::mutex> lockClockTrigger(mtxClockTrigger);
 
+    gripMap gm(logger);
+    gm.loadConfig(grip_map_path);
+
     while (rclcpp::ok() && !(finish))
     {
         rosgraph_msgs::msg::Clock clockMsg;
         clockMsg.clock = rclcpp::Time(static_cast<uint64_t>(simTime * 1e9));
         clockPub->publish(clockMsg);
-        model->forwardIntegrate(timestep);
+        auto wheelPositions = model->getWheelPositions();
+        Wheels gripValues = gm.getGripValues(wheelPositions);
+        model->forwardIntegrate(timestep, gripValues);
         auto t = model->getPosition();
         auto rEulerAngles = model->getOrientation();
         auto alpha = model->getAngularAcceleration();
@@ -441,6 +449,7 @@ void getRos2Params(rclcpp::Node::SharedPtr& node)
 {
     std::vector<std::pair<std::string, std::string*>> params;
     params.push_back({ "track_name", &trackName });
+    params.push_back({ "grip_map_path", &grip_map_path });
     params.push_back({ "track_frame", &trackFrame });
     params.push_back({ "report_file_dir", &report_file_dir });
     params.push_back({ "main_config_path", &main_config_path });

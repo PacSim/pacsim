@@ -1,0 +1,7 @@
+grip_map:
+  version: 1.0
+  total_scale: 1.0 # every point is multiplied with that factor (when you want to easily change the grip for the whole track)
+  # the current value is determined based on the closest point
+  points:
+  - position: [0.0, 0.0, 0.0]
+    value: 1.0

@@ -93,6 +93,17 @@ public:
 
     Wheels getTorques() { return this->torques; }
 
+    std::array<Eigen::Vector3d, 4> getWheelPositions()
+    {
+        auto rotMat = eulerAnglesToRotMat(this->orientation).transpose();
+        Eigen::Vector3d FL = rotMat * Eigen::Vector3d(this->lf, this->sf * 0.5, 0.0) + this->position;
+        Eigen::Vector3d FR = rotMat * Eigen::Vector3d(this->lf, -this->sf * 0.5, 0.0) + this->position;
+        Eigen::Vector3d RL = rotMat * Eigen::Vector3d(-this->lr, this->sr * 0.5, 0.0) + this->position;
+        Eigen::Vector3d RR = rotMat * Eigen::Vector3d(-this->lr, -this->sr * 0.5, 0.0) + this->position;
+        std::array<Eigen::Vector3d, 4> ret { FL, FR, RL, RR };
+        return ret;
+    }
+
     void setTorques(Wheels in) { this->torques = in; }
 
     void setRpmSetpoints(Wheels in) { this->rpmSetpoints = in; }
@@ -132,7 +143,7 @@ public:
     }
 
     // ax, ay, rdot
-    Eigen::Vector3d getDynamicStates(double dt)
+    Eigen::Vector3d getDynamicStates(double dt, Wheels frictionCoefficients)
     {
         double l = this->lr + this->lf;
         double vx = this->velocity.x();
@@ -196,8 +207,8 @@ public:
         Fx_RL *= (((this->torques.RL) > 0.5) || (vCog.x() > 0.3)) ? 1.0 : 0.0;
         Fx_RR *= (((this->torques.RR) > 0.5) || (vCog.x() > 0.3)) ? 1.0 : 0.0;
 
-        double Dlat_Front = this->Dlat * Fz_Front;
-        double Dlat_Rear = this->Dlat * Fz_Rear;
+        double Dlat_Front = 0.5 * (frictionCoefficients.FL + frictionCoefficients.FR) * this->Dlat * Fz_Front;
+        double Dlat_Rear = 0.5 * (frictionCoefficients.RL + frictionCoefficients.RR) * this->Dlat * Fz_Rear;
 
         double Fy_Front = Dlat_Front * processSlipAngleLat(kappaFront);
         double Fy_Rear = Dlat_Rear * processSlipAngleLat(kappaRear);
@@ -230,7 +241,7 @@ public:
         return ret;
     }
 
-    void forwardIntegrate(double dt)
+    void forwardIntegrate(double dt, Wheels frictionCoefficients)
     {
         Eigen::Vector3d friction(std::min(200.0, 2000.0 * std::abs(this->velocity.x())),
             std::min(200.0, 2000.0 * std::abs(this->velocity.y())),
@@ -244,7 +255,7 @@ public:
 
         this->torques = this->maxTorques;
 
-        Eigen::Vector3d xdotdyn = getDynamicStates(dt);
+        Eigen::Vector3d xdotdyn = getDynamicStates(dt, frictionCoefficients);
 
         this->orientation += Eigen::Vector3d(0.0, 0.0, dt * angularVelocity.z());
 
