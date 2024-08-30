@@ -2,7 +2,7 @@
 # PacSim
 PacSim (Planning and Controls Simuluator) is a simulator for Formula Student Driverless competitions originally developed at [Elbflorace](https://elbflorace.de/).
 
-Example of a pipeline running in PacSim running with visualizations in Foxglove:
+Example of a pipeline running in PacSim with visualizations in Foxglove:
 
 ![Demo gif](doc/demo.gif)
 
