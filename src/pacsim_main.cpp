@@ -141,11 +141,15 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     model->setPosition(start_position);
     model->setOrientation(start_orientation);
 
+    gripMap gm(logger);
+    gm.loadConfig(grip_map_path);
+
     if (mainConfig.pre_transform_track)
     {
         lms = transformTrack(lms, start_position, start_orientation);
         model->setPosition(Eigen::Vector3d::Zero());
         model->setOrientation(Eigen::Vector3d::Zero());
+        gm.transformPoints(start_position, start_orientation);
         start_position = Eigen::Vector3d::Zero();
         start_orientation = Eigen::Vector3d::Zero();
     }
@@ -173,9 +177,6 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     bool finish = false;
     std::mutex mtxClockTrigger;
     std::unique_lock<std::mutex> lockClockTrigger(mtxClockTrigger);
-
-    gripMap gm(logger);
-    gm.loadConfig(grip_map_path);
 
     while (rclcpp::ok() && !(finish))
     {
