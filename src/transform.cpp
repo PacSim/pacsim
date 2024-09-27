@@ -48,3 +48,56 @@ LandmarkList transformLmList(LandmarkList& in, Eigen::Vector3d trans, Eigen::Vec
 
     return out;
 }
+
+Track transformTrack(Track& in, Eigen::Vector3d trans, Eigen::Vector3d rot)
+{
+    Eigen::Matrix3d rotationMatrix = eulerAnglesToRotMat(rot);
+    Eigen::Vector3d transInverse = inverseTranslation(trans, rot);
+
+    Track out = in;
+    out.lanesFirstWithLastConnected = in.lanesFirstWithLastConnected;
+    out.left_lane.clear();
+    for (auto& lm : in.left_lane)
+    {
+        Landmark temp = lm;
+        temp.position = rotationMatrix * lm.position;
+        temp.position += transInverse;
+        temp.id = lm.id;
+        out.left_lane.push_back(temp);
+    }
+    out.right_lane.clear();
+    for (auto& lm : in.right_lane)
+    {
+        Landmark temp = lm;
+        temp.position = rotationMatrix * lm.position;
+        temp.position += transInverse;
+        temp.id = lm.id;
+        out.right_lane.push_back(temp);
+    }
+    out.unknown.clear();
+    for (auto& lm : in.unknown)
+    {
+        Landmark temp = lm;
+        temp.position = rotationMatrix * lm.position;
+        temp.position += transInverse;
+        temp.id = lm.id;
+        out.unknown.push_back(temp);
+    }
+
+    out.time_keeping_gates.clear();
+    for (auto& gate : in.time_keeping_gates)
+    {
+        Landmark temp1 = gate.first;
+        temp1.position = rotationMatrix * gate.first.position;
+        temp1.position += transInverse;
+        temp1.id = gate.first.id;
+        Landmark temp2 = gate.second;
+        temp2.position = rotationMatrix * gate.second.position;
+        temp2.position += transInverse;
+        temp2.id = gate.second.id;
+
+        out.time_keeping_gates.push_back(std::make_pair(temp1, temp2));
+    }
+
+    return out;
+}

@@ -21,3 +21,6 @@ vehicle_model:
     gearRatio: 12.23
     innerSteeringRatio: 0.255625
     outerSteeringRaito: 0.20375
+    nominalVoltageTS: 550.0
+    powerGroundForce: 700.0
+    powertrainEfficiency: 0.95

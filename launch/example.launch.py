@@ -32,7 +32,7 @@ def generate_launch_description():
           namespace='pacsim',
           executable='pacsim_node',
           name='pacsim_node',
-          parameters = [{'use_sim_time':True}, {"track_name" : getFullFilePath(track_name, "tracks")}, {"track_frame" : track_frame}, {"realtime_ratio" : realtime_ratio}, 
+          parameters = [{'use_sim_time':True}, {"track_name" : getFullFilePath(track_name, "tracks")}, {"grip_map_path" : getFullFilePath("gripMap.yaml", "tracks")}, {"track_frame" : track_frame}, {"realtime_ratio" : realtime_ratio}, 
                         {"report_file_dir" : "/tmp"}, {"main_config_path" : getFullFilePath("mainConfig.yaml", dir="config")}, {"perception_config_path" : getFullFilePath("perception.yaml", dir="config")}, 
                         {"sensors_config_path" : getFullFilePath("sensors.yaml", dir="config")}, {"vehicle_model_config_path" : getFullFilePath("vehicleModel.yaml", dir="config")}, {"discipline" : discipline}],
           output="screen",

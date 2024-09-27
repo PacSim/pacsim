@@ -20,7 +20,8 @@ public:
     std::string getFrameId();
 
     bool RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrackRotation, Eigen::Vector3d& trans,
-        Eigen::Vector3d& rot, double time, Eigen::Vector3d velocity, Eigen::Vector3d omega);
+        Eigen::Vector3d& rot, double time, Eigen::Vector3d velocity, Eigen::Vector3d omega,
+        Eigen::Vector3d start_position, Eigen::Vector3d start_orientation, bool trackPreTransformed);
 
 private:
     std::string name;

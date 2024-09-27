@@ -20,6 +20,9 @@ public:
     virtual Wheels getTorques() = 0;
     virtual Wheels getWheelOrientations() = 0;
     virtual double getSteeringWheelAngle() = 0;
+    virtual double getVoltageTS() = 0;
+    virtual double getCurrentTS() = 0;
+    virtual std::array<Eigen::Vector3d, 4> getWheelPositions() = 0;
     virtual bool readConfig(ConfigElement& config) = 0;
 
     virtual void setTorques(Wheels in) = 0;
@@ -28,10 +31,12 @@ public:
     virtual void setMaxTorques(Wheels in) = 0;
     virtual void setSteeringSetpointFront(double in) = 0;
     virtual void setSteeringSetpointRear(double in) = 0;
+    virtual void setPowerGroundSetpoint(double in) = 0;
+
     virtual void setPosition(Eigen::Vector3d position) = 0;
     virtual void setOrientation(Eigen::Vector3d orientation) = 0;
 
-    virtual void forwardIntegrate(double dt) = 0;
+    virtual void forwardIntegrate(double dt, Wheels frictionCoefficients) = 0;
 
 protected:
     // states

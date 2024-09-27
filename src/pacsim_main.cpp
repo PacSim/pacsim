@@ -50,6 +50,8 @@
 
 #include "sensorModels/gnssSensor.hpp"
 
+#include "track/gripMap.hpp"
+
 // DynamicDoubleTrackModel7Dof model;
 std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor;
 std::shared_ptr<IVehicleModel> model;
@@ -63,6 +65,9 @@ rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringFrontPub;
 rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringRearPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr wheelspeedPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr torquesPub;
+rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr voltageSensorTSPub;
+rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr currentSensorTSPub;
+
 rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointStatePublisher;
 
 std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
@@ -83,10 +88,12 @@ DeadTime<Wheels> deadTimeTorques(0.0);
 DeadTime<Wheels> deadTimeWspdSetpoints(0.0);
 DeadTime<Wheels> deadTimeMaxTorques(0.0);
 DeadTime<Wheels> deadTimeMinTorques(0.0);
+DeadTime<double> deadTimePowerGroundSetpoint(0.0);
 
 std::mutex mutexSimTime;
 
 std::string trackName;
+std::string grip_map_path;
 std::string trackFrame;
 std::string report_file_dir;
 std::string main_config_path;
@@ -108,6 +115,9 @@ std::shared_ptr<ScalarValueSensor> steeringSensorFront;
 std::shared_ptr<ScalarValueSensor> steeringSensorRear;
 std::shared_ptr<WheelsSensor> wheelspeedSensor;
 std::shared_ptr<WheelsSensor> torquesSensor;
+std::shared_ptr<ScalarValueSensor> currentSensorTS;
+std::shared_ptr<ScalarValueSensor> voltageSensorTS;
+
 std::shared_ptr<Logger> logger;
 
 std::condition_variable cvClockTrigger;
@@ -127,9 +137,24 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     Eigen::Vector3d start_position;
     Eigen::Vector3d start_orientation;
     Track lms = loadMap(trackName, start_position, start_orientation);
-    LandmarkList trackAsLMList = trackToLMList(lms);
+
     model->setPosition(start_position);
     model->setOrientation(start_orientation);
+
+    gripMap gm(logger);
+    gm.loadConfig(grip_map_path);
+
+    if (mainConfig.pre_transform_track)
+    {
+        lms = transformTrack(lms, start_position, start_orientation);
+        model->setPosition(Eigen::Vector3d::Zero());
+        model->setOrientation(Eigen::Vector3d::Zero());
+        gm.transformPoints(start_position, start_orientation);
+        start_position = Eigen::Vector3d::Zero();
+        start_orientation = Eigen::Vector3d::Zero();
+    }
+
+    LandmarkList trackAsLMList = trackToLMList(lms);
 
     LandmarksMarkerWrapper mapMarkersWrapper(0.8, "pacsim");
 
@@ -142,6 +167,8 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
     deadTimeWspdSetpoints = DeadTime<Wheels>(0.02);
     deadTimeMaxTorques = DeadTime<Wheels>(0.02);
     deadTimeMinTorques = DeadTime<Wheels>(0.02);
+    deadTimePowerGroundSetpoint = DeadTime<double>(0.05);
+
     double current_wheel_speed_angle = 0.0;
 
     auto nextLoopTime = std::chrono::steady_clock::now();
@@ -156,7 +183,9 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
         rosgraph_msgs::msg::Clock clockMsg;
         clockMsg.clock = rclcpp::Time(static_cast<uint64_t>(simTime * 1e9));
         clockPub->publish(clockMsg);
-        model->forwardIntegrate(timestep);
+        auto wheelPositions = model->getWheelPositions();
+        Wheels gripValues = gm.getGripValues(wheelPositions);
+        model->forwardIntegrate(timestep, gripValues);
         auto t = model->getPosition();
         auto rEulerAngles = model->getOrientation();
         auto alpha = model->getAngularAcceleration();
@@ -196,6 +225,11 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
         {
             Wheels val = deadTimeMinTorques.getOldest();
             model->setMinTorques(val);
+        }
+        if (deadTimePowerGroundSetpoint.availableDeadTime(simTime))
+        {
+            double val = deadTimePowerGroundSetpoint.getOldest();
+            model->setPowerGroundSetpoint(val);
         }
 
         if (simTime >= (lastEgoMotionSensorSampleTime + 1 / egoMotionSensorRate))
@@ -243,11 +277,33 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
             steeringRearPub->publish(msg);
         }
 
+        double voltageTsCurr = model->getVoltageTS();
+        StampedScalar voltageTSData { voltageTsCurr, simTime };
+        if (voltageSensorTS->RunTick(voltageTSData, simTime))
+        {
+            StampedScalar voltageData = voltageSensorTS->getOldest();
+            pacsim::msg::StampedScalar msg;
+            msg.value = voltageData.data;
+            msg.stamp = rclcpp::Time(static_cast<uint64_t>(voltageData.timestamp * 1e9));
+            voltageSensorTSPub->publish(msg);
+        }
+
+        double currentTsCurr = model->getCurrentTS();
+        StampedScalar currentTSData { currentTsCurr, simTime };
+        if (currentSensorTS->RunTick(currentTSData, simTime))
+        {
+            StampedScalar currentData = currentSensorTS->getOldest();
+            pacsim::msg::StampedScalar msg;
+            msg.value = currentData.data;
+            msg.stamp = rclcpp::Time(static_cast<uint64_t>(currentData.timestamp * 1e9));
+            currentSensorTSPub->publish(msg);
+        }
+
         for (auto& gnss : gnssSensors)
         {
 
             if (gnss->RunTick(lms.gnssOrigin, lms.enuToTrackRotation, t, rEulerAngles, simTime, model->getVelocity(),
-                    model->getAngularVelocity()))
+                    model->getAngularVelocity(), start_position, start_orientation, mainConfig.pre_transform_track))
             {
                 auto gnssData = gnss->getOldest();
                 auto gnssMsg = createRosGnssMessage(gnssData);
@@ -361,6 +417,12 @@ void cbWheelspeeds(const pacsim::msg::Wheels& msg)
     deadTimeWspdSetpoints.addVal(w, simTime);
 }
 
+void cbPowerGround(const pacsim::msg::StampedScalar& msg)
+{
+    std::lock_guard<std::mutex> l(mutexSimTime);
+    deadTimePowerGroundSetpoint.addVal(msg.value, simTime);
+}
+
 void cbFinishSignal(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
     std::shared_ptr<std_srvs::srv::Empty::Response> response)
 {
@@ -388,6 +450,7 @@ void getRos2Params(rclcpp::Node::SharedPtr& node)
 {
     std::vector<std::pair<std::string, std::string*>> params;
     params.push_back({ "track_name", &trackName });
+    params.push_back({ "grip_map_path", &grip_map_path });
     params.push_back({ "track_frame", &trackFrame });
     params.push_back({ "report_file_dir", &report_file_dir });
     params.push_back({ "main_config_path", &main_config_path });
@@ -455,6 +518,13 @@ void initSensors()
     wheelspeedSensor = std::make_shared<WheelsSensor>(200.0, 0.005);
     wheelspeedSensor->readConfig(wheelSpeedConfig);
 
+    voltageSensorTS = std::make_shared<ScalarValueSensor>(200.0, 0.005);
+    auto voltageTSConfig = sensorsConfig.getElement("voltage_ts");
+    voltageSensorTS->readConfig(voltageTSConfig);
+    currentSensorTS = std::make_shared<ScalarValueSensor>(200.0, 0.005);
+    auto currentTSConfig = sensorsConfig.getElement("current_ts");
+    currentSensorTS->readConfig(currentTSConfig);
+
     auto torquesConfig = sensorsConfig.getElement("wheelspeeds");
     torquesSensor = std::make_shared<WheelsSensor>(200.0, 0.005);
     torquesSensor->readConfig(torquesConfig);
@@ -479,6 +549,8 @@ MainConfig fillMainConfig(std::string path)
     config.getElement<bool>(&ret.doo_detect, "doo_detect");
     config.getElement<bool>(&ret.uss_detect, "uss_detect");
     config.getElement<bool>(&ret.finish_validate, "finish_validate");
+
+    config.getElement<bool>(&ret.pre_transform_track, "pre_transform_track");
 
     ret.discipline = stringToDiscipline(discipline);
     return ret;
@@ -530,6 +602,9 @@ int main(int argc, char** argv)
     auto wspdSetpointSub
         = node->create_subscription<pacsim::msg::Wheels>("/pacsim/wheelspeed_setpoints", 1, cbWheelspeeds);
 
+    auto powerGroundSetpointSub
+        = node->create_subscription<pacsim::msg::StampedScalar>("/pacsim/powerground_setpoint", 1, cbPowerGround);
+
     velocity_pub = node->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("/pacsim/velocity", 3);
 
     clockPub = node->create_publisher<rosgraph_msgs::msg::Clock>("/clock", 1);
@@ -573,6 +648,9 @@ int main(int argc, char** argv)
 
     steeringFrontPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/steeringFront", 1);
     steeringRearPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/steeringRear", 1);
+    voltageSensorTSPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/ts/voltage", 1);
+    currentSensorTSPub = node->create_publisher<pacsim::msg::StampedScalar>("/pacsim/ts/current", 1);
+
     wheelspeedPub = node->create_publisher<pacsim::msg::Wheels>("/pacsim/wheelspeeds", 1);
     torquesPub = node->create_publisher<pacsim::msg::Wheels>("/pacsim/torques", 1);
 
