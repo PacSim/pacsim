@@ -118,7 +118,8 @@ std::string GnssSensor::getName() { return this->name; }
 std::string GnssSensor::getFrameId() { return this->frame_id; }
 
 bool GnssSensor::RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrackRotation, Eigen::Vector3d& trans,
-    Eigen::Vector3d& rot, double time, Eigen::Vector3d velocity, Eigen::Vector3d omega)
+    Eigen::Vector3d& rot, double time, Eigen::Vector3d velocity, Eigen::Vector3d omega, Eigen::Vector3d start_position,
+    Eigen::Vector3d start_orientation, bool trackPreTransformed)
 {
 
     if (this->sampleReady(time))
@@ -131,7 +132,13 @@ bool GnssSensor::RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrac
         auto rotEnuToEcef = getEnuToEcefRotMat(originLat, originLon);
         Eigen::Vector3d rotTrackToENU(enuToTrackRotation.x(), enuToTrackRotation.y(), enuToTrackRotation.z());
         Eigen::Matrix3d rotMatTrackToEnu = eulerAnglesToRotMat(rotTrackToENU).transpose();
-        Eigen::Vector3d enuCar = rotMatTrackToEnu * trans;
+        Eigen::Vector3d actualTrackCar = start_position;
+        // if the track was transformed, we need to account for the changed track origin
+        if (trackPreTransformed)
+        {
+            actualTrackCar = eulerAnglesToRotMat(start_orientation).transpose() * trans + start_position;
+        }
+        Eigen::Vector3d enuCar = rotMatTrackToEnu * actualTrackCar;
 
         std::default_random_engine generator(noiseSeed);
 
@@ -156,12 +163,24 @@ bool GnssSensor::RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrac
 
         Eigen::Vector3d velENU
             = rotMatTrackToEnu * eulerAnglesToRotMat(rot) * rigidBodyVelocity(velocity, this->position, omega);
+        if (trackPreTransformed)
+        {
+            velENU = rotMatTrackToEnu * eulerAnglesToRotMat(start_orientation) * eulerAnglesToRotMat(rot)
+                * rigidBodyVelocity(velocity, this->position, omega);
+        }
 
         // sensor->car->track->enu
         quaternion q0 = quatFromEulerAngles(this->orientation);
         quaternion q1 = quatFromEulerAngles(rot);
+        quaternion q11 = quatFromEulerAngles(start_orientation);
+        quaternion qCar = q1;
+        // if the track was transformed, we need to account for the changed track origin
+        if (trackPreTransformed)
+        {
+            qCar = quatMult(q11, q1);
+        }
         quaternion q2 = quatFromEulerAngles(rotTrackToENU);
-        quaternion q3 = quatMult(q2, quatMult(q1, q0));
+        quaternion q3 = quatMult(q2, quatMult(qCar, q0));
         // apply noise as additional rotation
         quaternion q4
             = quatFromEulerAngles(Eigen::Vector3d(distXOr(generator), distYOr(generator), distZOr(generator)));

@@ -46,7 +46,6 @@ struct Track
     Eigen::Vector3d gnssOrigin;
     Eigen::Vector3d enuToTrackRotation;
 };
-
 struct LandmarkList
 {
     std::vector<Landmark> list;
@@ -192,6 +191,7 @@ struct MainConfig
     Discipline discipline;
     std::string cog_frame_id_pipeline;
     bool broadcast_sensors_tf2;
+    bool pre_transform_track;
 };
 
 Discipline stringToDiscipline(const std::string& disciplineStr);

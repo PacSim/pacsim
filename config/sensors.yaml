@@ -23,6 +23,18 @@ sensors:
     error:
       mean: 0.0
       sigma: 0.01
+  voltage_ts:
+    rate: 200
+    dead_time: 0.005
+    error:
+      mean: 0.0
+      sigma: 0.00001
+  current_ts:
+    rate: 200
+    dead_time: 0.005
+    error:
+      mean: 0.0
+      sigma: 0.00001
   imus:
     - imu:
       name: "cog_imu"
