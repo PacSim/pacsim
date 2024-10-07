@@ -11,3 +11,4 @@ uint8 CLASS_TIMEKEEPING = 6
 
 float64[7] class_probabilities # highest probability -> "detection class" 
 float64 detection_probability # 1.0 -> for sure true positive : maybe false positive
+int32 id # used for ground truth data associations

@@ -305,6 +305,7 @@ pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
             = lm.typeWeights[LandmarkType::INVISIBLE];
 
         lmMsg.detection_probability = lm.detection_probability;
+        lmMsg.id = lm.id;
         lmsMsg.detections.push_back(lmMsg);
     }
     return lmsMsg;
