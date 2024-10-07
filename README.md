@@ -34,7 +34,11 @@ We provide an example launch file (example.launch.py) which shows an example of 
 
 The sensors and vehicle model are configured using config files. Examples are provided in the config folder. Things such as the discipline or the path of the track file or config files are defined using ros2 parameters.
 
-The default vehicle model provided is rather simple and just meant to be a starting point. You are encouraged to integrate your own vehicle model by implementing the `IVehicleModel` class 
+The default vehicle model provided is rather simple and just meant to be a starting point. You are encouraged to integrate your own vehicle model by implementing the `IVehicleModel` class.
+
+## Docker Dev Container
+
+A [Dockerfile](./.devcontainer/Dockerfile) is configured that already contains all the dependencies. It can be used with a [dev container environment](./.devcontainer) or launched independently wiht the [docker-compose](./docker-compose.yml) file. For more info, check the [docs folder](./doc/docker_usage.md).
 
 # Contributing
 Contributions in any form (reports, feedback, requests, submissions) are welcome. Preferably create an Issue or Pull request for that.

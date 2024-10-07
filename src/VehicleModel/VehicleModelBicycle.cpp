@@ -123,13 +123,13 @@ public:
         double avgRatio = 0.5 * (this->innerSteeringRatio + this->outerSteeringRatio);
         if (in > 0)
         {
-            this->steeringAngles.FL = this->innerSteeringRatio * in;
-            this->steeringAngles.FR = this->outerSteeringRatio * in;
+            this->steeringAngles.FL = this->innerSteeringRatio * in / avgRatio;
+            this->steeringAngles.FR = this->outerSteeringRatio * in / avgRatio;
         }
         else
         {
-            this->steeringAngles.FL = this->outerSteeringRatio * in;
-            this->steeringAngles.FR = this->innerSteeringRatio * in;
+            this->steeringAngles.FL = this->outerSteeringRatio * in / avgRatio;
+            this->steeringAngles.FR = this->innerSteeringRatio * in / avgRatio;
         }
         return;
     }
@@ -179,7 +179,7 @@ public:
         Eigen::Vector3d vFront = vCog + omega.cross(rFront);
         Eigen::Vector3d vRear = vCog + omega.cross(rRear);
 
-        double rpm2ms = this->wheelRadius * 2.0 * M_PI / (this->gearRatio * 60.0);
+        double rpm2ms = this->wheelRadius * 2.0 * M_PI / 60;
 
         bool stillstand = (vCog.norm() < 0.1) && (std::abs(this->angularVelocity.z()) < 0.001);
 
