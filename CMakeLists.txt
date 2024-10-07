@@ -31,7 +31,7 @@ rosidl_generate_interfaces(
   ${PROJECT_NAME}
   "msg/StampedScalar.msg"
   "msg/Wheels.msg"
-  "msg/PerceptionDetection.msg"
+  "msg/Landmark.msg"
   "msg/PerceptionDetections.msg"
   "msg/GNSS.msg"
   "srv/ClockTriggerAbsolute.srv"

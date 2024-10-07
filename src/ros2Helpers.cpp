@@ -271,7 +271,7 @@ pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
     ;
     for (Landmark lm : sensorLms.list)
     {
-        pacsim::msg::PerceptionDetection lmMsg;
+        pacsim::msg::Landmark lmMsg;
         lmMsg.header = lmsMsg.header;
         lmMsg.pose.pose.position.x = lm.position.x();
         lmMsg.pose.pose.position.y = lm.position.y();
@@ -290,18 +290,18 @@ pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
         lmMsg.pose.covariance[4 + 4 * 6] = -1;
         lmMsg.pose.covariance[4 + 5 * 6] = -1;
 
-        lmMsg.class_probabilities[pacsim::msg::PerceptionDetection::CLASS_UNKNOWN]
+        lmMsg.class_probabilities[pacsim::msg::Landmark::CLASS_UNKNOWN]
             = lm.typeWeights[LandmarkType::UNKNOWN];
-        lmMsg.class_probabilities[pacsim::msg::PerceptionDetection::CLASS_BLUE] = lm.typeWeights[LandmarkType::BLUE];
-        lmMsg.class_probabilities[pacsim::msg::PerceptionDetection::CLASS_YELLOW]
+        lmMsg.class_probabilities[pacsim::msg::Landmark::CLASS_BLUE] = lm.typeWeights[LandmarkType::BLUE];
+        lmMsg.class_probabilities[pacsim::msg::Landmark::CLASS_YELLOW]
             = lm.typeWeights[LandmarkType::YELLOW];
-        lmMsg.class_probabilities[pacsim::msg::PerceptionDetection::CLASS_ORANGE]
+        lmMsg.class_probabilities[pacsim::msg::Landmark::CLASS_ORANGE]
             = lm.typeWeights[LandmarkType::ORANGE];
-        lmMsg.class_probabilities[pacsim::msg::PerceptionDetection::CLASS_BIGORANGE]
+        lmMsg.class_probabilities[pacsim::msg::Landmark::CLASS_BIGORANGE]
             = lm.typeWeights[LandmarkType::BIG_ORANGE];
-        lmMsg.class_probabilities[pacsim::msg::PerceptionDetection::CLASS_TIMEKEEPING]
+        lmMsg.class_probabilities[pacsim::msg::Landmark::CLASS_TIMEKEEPING]
             = lm.typeWeights[LandmarkType::TIMEKEEPING];
-        lmMsg.class_probabilities[pacsim::msg::PerceptionDetection::CLASS_INVISIBLE]
+        lmMsg.class_probabilities[pacsim::msg::Landmark::CLASS_INVISIBLE]
             = lm.typeWeights[LandmarkType::INVISIBLE];
 
         lmMsg.detection_probability = lm.detection_probability;
