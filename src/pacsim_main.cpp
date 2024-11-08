@@ -61,6 +61,7 @@ rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clockPub;
 rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr velocity_pub;
 rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub;
 rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr mapVizPub;
+rclcpp::Publisher<pacsim::msg::Track>::SharedPtr trackPub;
 rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringFrontPub;
 rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringRearPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr wheelspeedPub;
@@ -160,6 +161,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
 
     visualization_msgs::msg::MarkerArray mapMarkerMsg = mapMarkersWrapper.markerFromLMs(lms, trackFrame, 0.0);
     mapVizPub->publish(mapMarkerMsg);
+    trackPub->publish(createRosTrackMessage(lms, "map", 0.0));
 
     deadTimeSteeringFront = DeadTime<double>(0.05);
     deadTimeSteeringRear = DeadTime<double>(0.05);
@@ -324,6 +326,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
                 perceptionSensorVizPublisherMap[perceptionSensor]->publish(lmsMarkerMsg);
 
                 mapVizPub->publish(mapMarkerMsg);
+                trackPub->publish(createRosTrackMessage(lms, "map", simTime));
                 pacsim::msg::PerceptionDetections lmsMsg
                     = LandmarkListToRosMessage(sensorLms, sensorLms.frame_id, sensorLms.timestamp);
                 perceptionSensorPublisherMap[perceptionSensor]->publish(lmsMsg);
@@ -609,7 +612,9 @@ int main(int argc, char** argv)
 
     clockPub = node->create_publisher<rosgraph_msgs::msg::Clock>("/clock", 1);
 
-    mapVizPub = node->create_publisher<visualization_msgs::msg::MarkerArray>("/pacsim/map", 1);
+    mapVizPub = node->create_publisher<visualization_msgs::msg::MarkerArray>("/pacsim/track/visualization", 1);
+
+    trackPub = node->create_publisher<pacsim::msg::Track>("/pacsim/track/landmarks", 1);
 
     auto finishSignalServer = node->create_service<std_srvs::srv::Empty>("/pacsim/finish_signal", cbFinishSignal);
     auto clockTriggerAbsoluteServer = node->create_service<pacsim::srv::ClockTriggerAbsolute>(

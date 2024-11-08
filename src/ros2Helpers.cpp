@@ -262,17 +262,10 @@ visualization_msgs::msg::MarkerArray LandmarksMarkerWrapper::deleteAllMsg(std::s
     return out;
 }
 
-pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
-    const LandmarkList& sensorLms, std::string frameId, double time)
-{
-    pacsim::msg::PerceptionDetections lmsMsg;
-    lmsMsg.header.frame_id = frameId;
-    lmsMsg.header.stamp = rclcpp::Time(static_cast<uint64_t>(time * 1e9));
-    ;
-    for (Landmark lm : sensorLms.list)
-    {
+pacsim::msg::Landmark LandmarkToRosMessage(const Landmark& lm, std::string frameId, double time) {
         pacsim::msg::Landmark lmMsg;
-        lmMsg.header = lmsMsg.header;
+        lmMsg.header.frame_id = frameId;
+        lmMsg.header.stamp = rclcpp::Time(static_cast<uint64_t>(time * 1e9));
         lmMsg.pose.pose.position.x = lm.position.x();
         lmMsg.pose.pose.position.y = lm.position.y();
         lmMsg.pose.pose.position.z = lm.position.z();
@@ -306,7 +299,19 @@ pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
 
         lmMsg.detection_probability = lm.detection_probability;
         lmMsg.id = lm.id;
-        lmsMsg.detections.push_back(lmMsg);
+        return lmMsg;
+}
+
+pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
+    const LandmarkList& sensorLms, std::string frameId, double time)
+{
+    pacsim::msg::PerceptionDetections lmsMsg;
+    lmsMsg.header.frame_id = frameId;
+    lmsMsg.header.stamp = rclcpp::Time(static_cast<uint64_t>(time * 1e9));
+    ;
+    for (Landmark lm : sensorLms.list)
+    {
+        lmsMsg.detections.push_back(LandmarkToRosMessage(lm, frameId, time));
     }
     return lmsMsg;
 }
@@ -429,4 +434,30 @@ pacsim::msg::GNSS createRosGnssMessage(const GnssData& data)
     msg.orientation.z = data.orientation.z;
 
     return msg;
+}
+
+pacsim::msg::Track createRosTrackMessage(const Track& data, std::string frameId, double time) {
+    pacsim::msg::Track ret;
+    ret.header.stamp = rclcpp::Time(static_cast<uint64_t>(time * 1e9));
+    ret.header.frame_id = frameId;
+    ret.lanes_first_with_last_connected = data.lanesFirstWithLastConnected;
+    
+    for(auto& lm : data.left_lane) {
+        ret.left_lane.push_back(LandmarkToRosMessage(lm, frameId, time));
+    }
+    
+    for(auto& lm : data.right_lane) {
+        ret.right_lane.push_back(LandmarkToRosMessage(lm, frameId, time));
+    }
+    
+    for(auto& lm : data.unknown) {
+        ret.unknown.push_back(LandmarkToRosMessage(lm, frameId, time));
+    }
+
+    for(auto& gate : data.time_keeping_gates) {
+        ret.time_keeping_gates.push_back(LandmarkToRosMessage(gate.first, frameId, time));
+        ret.time_keeping_gates.push_back(LandmarkToRosMessage(gate.second, frameId, time));
+    }
+
+    return ret;
 }

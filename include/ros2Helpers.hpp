@@ -7,6 +7,7 @@
 #include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
 #include "pacsim/msg/gnss.hpp"
 #include "pacsim/msg/perception_detections.hpp"
+#include "pacsim/msg/track.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "types.hpp"
@@ -30,6 +31,8 @@ private:
     int lastMaxId;
 };
 
+pacsim::msg::Landmark LandmarkToRosMessage(const Landmark& lm, std::string frameId, double time);
+
 pacsim::msg::PerceptionDetections LandmarkListToRosMessage(
     const LandmarkList& sensorLms, std::string frameId, double time);
 
@@ -49,4 +52,5 @@ sensor_msgs::msg::JointState createRosJointMsg(
 
 pacsim::msg::GNSS createRosGnssMessage(const GnssData& data);
 
+pacsim::msg::Track createRosTrackMessage(const Track& data, std::string frameId, double time);
 #endif /* PACSIMROS2HELPERS_HPP */
