@@ -52,8 +52,6 @@ def generate_launch_description():
           executable='robot_state_publisher',
           name='robot_state_publisher',
           output='screen',
-          parameters=[{'use_sim_time':True}, {'publish_frequency':float(1000),
-                      'robot_description': Command(['xacro',' ',xacro_path])
-                      }],
+          parameters=[{'use_sim_time':True}, {'publish_frequency':float(1000),}],
           arguments=[xacro_path])
   return LaunchDescription([nodePacsim, nodePacsimShutdownEventHandler, robot_state_publisher])
