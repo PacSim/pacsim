@@ -28,13 +28,8 @@ Install dependencies:
 `sudo apt install ros-iron-desktop ros-iron-xacro`
 
 # How to get started
-To use PacSim with your autonomous system, you need to create a message converter node to match your own interfaces with the simulator.
 
-We provide an example launch file (example.launch.py) which shows an example of how to start the simulator node and the robot_state_publisher for the 3d visualization of the car.
-
-The sensors and vehicle model are configured using config files. Examples are provided in the config folder. Things such as the discipline or the path of the track file or config files are defined using ros2 parameters.
-
-The default vehicle model provided is rather simple and just meant to be a starting point. You are encouraged to integrate your own vehicle model by implementing the `IVehicleModel` class 
+To get started with using PacSim, take a look at the [Getting Started README](https://github.com/PacSim/pacsim/blob/master/doc/getting_started.md) here.
 
 # Contributing
 Contributions in any form (reports, feedback, requests, submissions) are welcome. Preferably create an Issue or Pull request for that.
