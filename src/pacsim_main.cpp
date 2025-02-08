@@ -515,7 +515,7 @@ void initSensors()
     auto frontSteeringConfig = sensorsConfig.getElement("steering_front");
     steeringSensorFront->readConfig(frontSteeringConfig);
     steeringSensorRear = std::make_shared<ScalarValueSensor>(200.0, 0.005);
-    auto rearSteeringConfig = sensorsConfig.getElement("steering_front");
+    auto rearSteeringConfig = sensorsConfig.getElement("steering_rear");
     steeringSensorRear->readConfig(rearSteeringConfig);
     auto wheelSpeedConfig = sensorsConfig.getElement("wheelspeeds");
     wheelspeedSensor = std::make_shared<WheelsSensor>(200.0, 0.005);
