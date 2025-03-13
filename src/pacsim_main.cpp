@@ -103,7 +103,7 @@ std::string sensors_config_path;
 std::string vehicle_model_config_path;
 std::string discipline;
 std::vector<std::string> jointNames
-    = { "FL_steer", "FL_rotate", "FR_steer", "FR_rotate", "RR_rotate", "RL_rotate", "steering" };
+    = { "RR_steer","RL_steer","FL_steer", "FR_steer", "FL_rotate", "FR_rotate", "RR_rotate", "RL_rotate", "steering" };
 double realtimeRatio = 1.0;
 MainConfig mainConfig;
 std::vector<std::shared_ptr<PerceptionSensor>> perceptionSensors;
@@ -361,7 +361,9 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
             torquesPub->publish(torquesMsg);
         }
 
-        std::vector<double> jointMsg = { steeringCurr.FL, orientation.FL, steeringCurr.FR, orientation.FR,
+
+
+        std::vector<double> jointMsg = { steeringCurr.RR,steeringCurr.RL,steeringCurr.FL,  steeringCurr.FR,orientation.FL, orientation.FR,
             orientation.RR, orientation.RL, -steeringWheelCurr };
         sensor_msgs::msg::JointState jointStamped = createRosJointMsg(jointNames, jointMsg, simTime);
         jointStatePublisher->publish(jointStamped);
