@@ -41,7 +41,7 @@ public:
         configModel.getElement<double>(&this->wheelRadius, "wheelRadius");
         configModel.getElement<double>(&this->gearRatio, "gearRatio");
         configModel.getElement<double>(&this->innerSteeringRatio, "innerSteeringRatio");
-        configModel.getElement<double>(&this->innerSteeringRatio, "innerSteeringRatio");
+        configModel.getElement<double>(&this->outerSteeringRatio, "outerSteeringRatio");
         configModel.getElement<double>(&this->nominalVoltageTS, "nominalVoltageTS");
         configModel.getElement<double>(&this->powerGroundForce, "powerGroundForce");
         configModel.getElement<double>(&this->powertrainEfficiency, "powertrainEfficiency");
