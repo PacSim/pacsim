@@ -10,13 +10,15 @@ public:
         this->position = Eigen::Vector3d(0.0, 0.0, 0.0);
         this->orientation = Eigen::Vector3d(0.0, 0.0, 0.0);
         this->velocity = Eigen::Vector3d(0.0, 0.0, 0.0);
-        this->angularVelocity = Eigen::Vector3d(0.0, 0.0, 0.0);
         this->acceleration = Eigen::Vector3d(0.0, 0.0, 0.0);
+        this->angularVelocity = Eigen::Vector3d(0.0, 0.0, 0.0);
+        this->angularAcceleration = Eigen::Vector3d(0.0, 0.0, 0.0);
 
         this->torques = { 0.0, 0.0, 0.0, 0.0 };
         this->steeringAngles = { 0.0, 0.0, 0.0, 0.0 };
         this->wheelOrientations = { 0.0, 0.0, 0.0, 0.0 };
         this->wheelspeeds = { 0.0, 0.0, 0.0, 0.0 };
+        this->stateVectorBck.setZero();
     }
 
     bool readConfig(ConfigElement& config)
@@ -95,7 +97,7 @@ public:
 
     std::array<Eigen::Vector3d, 4> getWheelPositions()
     {
-        auto rotMat = eulerAnglesToRotMat(this->orientation).transpose();
+        Eigen::Matrix3d rotMat = eulerAnglesToRotMat(this->orientation).transpose();
         Eigen::Vector3d FL = rotMat * Eigen::Vector3d(this->lf, this->sf * 0.5, 0.0) + this->position;
         Eigen::Vector3d FR = rotMat * Eigen::Vector3d(this->lf, -this->sf * 0.5, 0.0) + this->position;
         Eigen::Vector3d RL = rotMat * Eigen::Vector3d(-this->lr, this->sr * 0.5, 0.0) + this->position;
@@ -112,25 +114,33 @@ public:
 
     void setMinTorques(Wheels in) { this->minTorques = in; }
 
-    void setSteeringSetpointFront(double in) { setSteeringFront(in); }
+    void setSteeringSetpointFront(double in) { this->steeringFrontSetpoint = in; }
 
     void setSteeringSetpointRear(double in) { return; }
 
     void setPowerGroundSetpoint(double in) { this->powerGroundSetpoint = std::min(std::max(in, 0.0), 1.0); }
 
-    void setSteeringFront(double in)
+    void steeringKinematic(double in, double& leftAngle, double& rightAngle)
     {
-        double avgRatio = 0.5 * (this->innerSteeringRatio + this->outerSteeringRatio);
         if (in > 0)
         {
-            this->steeringAngles.FL = this->innerSteeringRatio * in;
-            this->steeringAngles.FR = this->outerSteeringRatio * in;
+            leftAngle = this->innerSteeringRatio * in;
+            rightAngle = this->outerSteeringRatio * in;
         }
         else
         {
-            this->steeringAngles.FL = this->outerSteeringRatio * in;
-            this->steeringAngles.FR = this->innerSteeringRatio * in;
+            leftAngle = this->outerSteeringRatio * in;
+            rightAngle = this->innerSteeringRatio * in;
         }
+        return;
+    }
+
+    void setSteeringFront(double in)
+    {
+        double left, right;
+        steeringKinematic(in, left, right);
+        this->steeringAngles.FL = left;
+        this->steeringAngles.FR = right;
         return;
     }
 
@@ -158,19 +168,69 @@ public:
         return std::sin(Clon * std::atan(Blon * kappa - Elon * (Blon * kappa - std::atan(Blon * kappa))));
     }
 
-    // ax, ay, rdot
-    Eigen::Vector3d getDynamicStates(double dt, Wheels frictionCoefficients)
+    Eigen::Matrix<double, 8, 1> getTireForcesStationary(
+        Eigen::Matrix<double, 24, 1> stateVector, Eigen::Matrix<double, 4, 1> uVector, Wheels frictionCoefficients)
     {
+        double fx_stat_fl;
+        double fx_stat_fr;
+        double fx_stat_rl;
+        double fx_stat_rr;
+
+        double fy_stat_fl;
+        double fy_stat_fr;
+        double fy_stat_rl;
+        double fy_stat_rr;
+
+        Wheels wheelspeeds;
+        wheelspeeds.FL = stateVector(14, 0);
+        wheelspeeds.FR = stateVector(15, 0);
+        wheelspeeds.RL = stateVector(16, 0);
+        wheelspeeds.RR = stateVector(17, 0);
+
+        Wheels torques;
+        torques.FL = uVector(0, 0);
+        torques.FR = uVector(1, 0);
+        torques.RL = uVector(2, 0);
+        torques.RR = uVector(3, 0);
+
+        Eigen::Vector3d velocity(stateVector(3, 0), stateVector(4, 0), 0.0);
+        Eigen::Vector3d angularVelocity(0.0, 0.0, stateVector(5, 0));
+
         double l = this->lr + this->lf;
-        double vx = this->velocity.x();
-        double vy = this->velocity.y();
-        double ax = this->acceleration.x();
-        double ay = this->acceleration.y();
-        double r = this->angularVelocity.z();
-        // Downforce
-        double F_aero_downforce = 0.5 * 1.29 * this->aeroArea * this->cla * (vx * vx);
+        double vx = velocity.x();
+        double vy = velocity.y();
+
+        double F_aero_downforce = 0.5 * 1.29 * this->aeroArea * this->cla * (vx * vx) + this->powerGroundSetpoint * this->powerGroundForce;
         double F_aero_drag = 0.5 * 1.29 * this->aeroArea * this->cda * (vx * vx);
-        // Fz load shift
+
+        double Fx_FL = stateVector(6, 0);
+        double Fx_FR = stateVector(7, 0);
+        double Fx_RL = stateVector(8, 0);
+        double Fx_RR = stateVector(9, 0);
+
+        double Fy_FL = stateVector(10, 0);
+        double Fy_FR = stateVector(11, 0);
+        double Fy_RL = stateVector(12, 0);
+        double Fy_RR = stateVector(13, 0);
+
+        double leftSteering, rightSteering;
+        steeringKinematic(stateVector(22, 0), leftSteering, rightSteering);
+
+        double axTires = (std::cos(leftSteering) * Fx_FL - std::sin(leftSteering) * Fy_FL
+                             + std::cos(rightSteering) * Fx_FR - std::sin(rightSteering) * Fy_FR
+                             + std::cos(this->steeringAngles.RL) * Fx_RL - std::sin(this->steeringAngles.RL) * Fy_RL
+                             + std::cos(this->steeringAngles.RR) * Fx_RR - std::sin(this->steeringAngles.RR) * Fy_RR)
+            / m;
+        double ax = axTires - F_aero_drag / m;
+
+        double ayTires = (std::sin(leftSteering) * Fx_FL + std::cos(leftSteering) * Fy_FL
+                             + std::sin(rightSteering) * Fx_FR + std::cos(rightSteering) * Fy_FR
+                             + std::sin(this->steeringAngles.RL) * Fx_RL + std::cos(this->steeringAngles.RL) * Fy_RL
+                             + std::sin(this->steeringAngles.RR) * Fx_RR + std::cos(this->steeringAngles.RR) * Fy_RR)
+            / m;
+        double ay = (ayTires);
+
+        double r = angularVelocity.z();
         double g = 9.81;
 
         // max because lifted tire makes no forces
@@ -184,8 +244,8 @@ public:
         double Fz_RR = std::max(
             0.0, ((m * g + F_aero_downforce) * 0.5 * this->lf / l + 0.5 * (ax / l + ay / sr) * m * this->hc));
 
-        Eigen::Vector3d vCog = this->velocity;
-        Eigen::Vector3d omega = this->angularVelocity;
+        Eigen::Vector3d vCog = velocity;
+        Eigen::Vector3d omega = angularVelocity;
 
         Eigen::Vector3d rFL = Eigen::Vector3d(lf, 0.5 * sf, 0.0);
         Eigen::Vector3d rFR = Eigen::Vector3d(lf, -0.5 * sf, 0.0);
@@ -198,28 +258,28 @@ public:
         Eigen::Vector3d vRR = vCog + omega.cross(rRR);
 
         double rpm2ms = this->wheelRadius * 2.0 * M_PI / (this->gearRatio * 60.0);
-        double slipFL = getSlip(this->wheelspeeds.FL * rpm2ms, vFL.x());
-        double slipFR = getSlip(this->wheelspeeds.FR * rpm2ms, vFR.x());
-        double slipRL = getSlip(this->wheelspeeds.RL * rpm2ms, vRL.x());
-        double slipRR = getSlip(this->wheelspeeds.RR * rpm2ms, vRR.x());
+        double slipFL = getSlip(wheelspeeds.FL * rpm2ms, vFL.x());
+        double slipFR = getSlip(wheelspeeds.FR * rpm2ms, vFR.x());
+        double slipRL = getSlip(wheelspeeds.RL * rpm2ms, vRL.x());
+        double slipRR = getSlip(wheelspeeds.RR * rpm2ms, vRR.x());
 
-        bool stillstand = (vCog.norm() < 0.1) && (std::abs(this->angularVelocity.z()) < 0.001);
+        bool stillstand = (vCog.norm() < 0.1) && (std::abs(angularVelocity.z()) < 0.001);
 
-        slipFL *= ((std::abs(this->torques.FL) > 0.1) || (!stillstand)) ? 1.0 : 0.0;
-        slipFR *= ((std::abs(this->torques.FR) > 0.1) || (!stillstand)) ? 1.0 : 0.0;
-        slipRL *= ((std::abs(this->torques.RL) > 0.1) || (!stillstand)) ? 1.0 : 0.0;
-        slipRR *= ((std::abs(this->torques.RR) > 0.1) || (!stillstand)) ? 1.0 : 0.0;
+        slipFL *= ((std::abs(torques.FL) > 0.1) || (!stillstand)) ? 1.0 : 0.0;
+        slipFR *= ((std::abs(torques.FR) > 0.1) || (!stillstand)) ? 1.0 : 0.0;
+        slipRL *= ((std::abs(torques.RL) > 0.1) || (!stillstand)) ? 1.0 : 0.0;
+        slipRR *= ((std::abs(torques.RR) > 0.1) || (!stillstand)) ? 1.0 : 0.0;
 
         // tire side slip angles
         double eps = 0.0001;
         double kappaFL
-            = std::atan2(vFL.y(), std::max(std::abs(this->wheelspeeds.FL * rpm2ms), eps)) - this->steeringAngles.FL;
+            = std::atan2(vFL.y(), std::max(std::abs(wheelspeeds.FL * rpm2ms), eps)) - leftSteering;
         double kappaFR
-            = std::atan2(vFR.y(), std::max(std::abs(this->wheelspeeds.FR * rpm2ms), eps)) - this->steeringAngles.FR;
+            = std::atan2(vFR.y(), std::max(std::abs(wheelspeeds.FR * rpm2ms), eps)) - rightSteering;
         double kappaRL
-            = std::atan2(vRL.y(), std::max(std::abs(this->wheelspeeds.RL * rpm2ms), eps)) - this->steeringAngles.RL;
+            = std::atan2(vRL.y(), std::max(std::abs(wheelspeeds.RL * rpm2ms), eps)) - this->steeringAngles.RL;
         double kappaRR
-            = std::atan2(vRR.y(), std::max(std::abs(this->wheelspeeds.FR * rpm2ms), eps)) - this->steeringAngles.RR;
+            = std::atan2(vRR.y(), std::max(std::abs(wheelspeeds.FR * rpm2ms), eps)) - this->steeringAngles.RR;
 
         // don't steer when vehicle doesn't move
         if (stillstand)
@@ -231,72 +291,32 @@ public:
         }
 
         // see https://research.chalmers.se/publication/523390/file/523390_Fulltext.pdf for combined slip calculations
-        double syfl = std::max(std::min(vFL.y() / std::max(std::abs(this->wheelspeeds.FL * rpm2ms), eps), 1.0), -1.0);
-        double syfr = std::max(std::min(vFR.y() / std::max(std::abs(this->wheelspeeds.FR * rpm2ms), eps), 1.0), -1.0);
-        double syrl = std::max(std::min(vRL.y() / std::max(std::abs(this->wheelspeeds.RL * rpm2ms), eps), 1.0), -1.0);
-        double syrr = std::max(std::min(vRR.y() / std::max(std::abs(this->wheelspeeds.RR * rpm2ms), eps), 1.0), -1.0);
+        double syfl = std::max(std::min(vFL.y() / std::max(std::abs(wheelspeeds.FL * rpm2ms), eps), 1.0), -1.0);
+        double syfr = std::max(std::min(vFR.y() / std::max(std::abs(wheelspeeds.FR * rpm2ms), eps), 1.0), -1.0);
+        double syrl = std::max(std::min(vRL.y() / std::max(std::abs(wheelspeeds.RL * rpm2ms), eps), 1.0), -1.0);
+        double syrr = std::max(std::min(vRR.y() / std::max(std::abs(wheelspeeds.RR * rpm2ms), eps), 1.0), -1.0);
 
         double absSlipFL = std::max(std::hypot(slipFL, syfl), 0.00001);
         double absSlipFR = std::max(std::hypot(slipFR, syfr), 0.00001);
         double absSlipRL = std::max(std::hypot(slipRL, syrl), 0.00001);
         double absSlipRR = std::max(std::hypot(slipRR, syrl), 0.00001);
 
-        double M_FL = this->gearRatio * this->torques.FL;
-        double M_FR = this->gearRatio * this->torques.FR;
-        double M_RL = this->gearRatio * this->torques.RL;
-        double M_RR = this->gearRatio * this->torques.RR;
+        double M_FL = this->gearRatio * torques.FL;
+        double M_FR = this->gearRatio * torques.FR;
+        double M_RL = this->gearRatio * torques.RL;
+        double M_RR = this->gearRatio * torques.RR;
 
         double minCombinedSlipFactor = 0.1;
 
-        double Fx_FL = Fz_FL * Dlon * processSlipRatioLon(slipFL);
-        double Fx_FR = Fz_FR * Dlon * processSlipRatioLon(slipFR);
-        double Fx_RL = Fz_RL * Dlon * processSlipRatioLon(slipRL);
-        double Fx_RR = Fz_RR * Dlon * processSlipRatioLon(slipRR);
+        fx_stat_fl = Fz_FL * Dlon * frictionCoefficients.FL * processSlipRatioLon(slipFL);
+        fx_stat_fr = Fz_FR * Dlon * frictionCoefficients.FR * processSlipRatioLon(slipFR);
+        fx_stat_rl = Fz_RL * Dlon * frictionCoefficients.RL * processSlipRatioLon(slipRL);
+        fx_stat_rr = Fz_RR * Dlon * frictionCoefficients.RR * processSlipRatioLon(slipRR);
 
-        // double Fx_FL = std::max(std::min((std::abs(slipFL)/absSlipFL),1.0), minCombinedSlipFactor) * Fz_FL * Dlon *
-        // processSlipRatioLon(slipFL); double Fx_FR = std::max(std::min((std::abs(slipFR)/absSlipFR),1.0),
-        // minCombinedSlipFactor) * Fz_FR * Dlon * processSlipRatioLon(slipFR); double Fx_RL =
-        // std::max(std::min((std::abs(slipRL)/absSlipRL),1.0), minCombinedSlipFactor) * Fz_RL * Dlon *
-        // processSlipRatioLon(slipRL); double Fx_RR = std::max(std::min((std::abs(slipRR)/absSlipRR),1.0),
-        // minCombinedSlipFactor) * Fz_RR * Dlon * processSlipRatioLon(slipRR);
-
-        // TODO check whether it's better to use slip and not force as transient variable??
-
-        if (vCog.norm() > 0.5)
-        {
-            this->currentFx.FL += dt * (Fx_FL - currentFx.FL) * this->wheelspeeds.FL * rpm2ms / relaxationLengthLon;
-            this->currentFx.FR += dt * (Fx_FR - currentFx.FR) * this->wheelspeeds.FR * rpm2ms / relaxationLengthLon;
-            this->currentFx.RL += dt * (Fx_RL - currentFx.RL) * this->wheelspeeds.RL * rpm2ms / relaxationLengthLon;
-            this->currentFx.RR += dt * (Fx_RR - currentFx.RR) * this->wheelspeeds.RR * rpm2ms / relaxationLengthLon;
-        }
-        else
-        {
-            this->currentFx.FL = Fx_FL;
-            this->currentFx.FR = Fx_FR;
-            this->currentFx.RL = Fx_RL;
-            this->currentFx.RR = Fx_RR;
-        }
-
-        Fx_FL = this->currentFx.FL;
-        Fx_FR = this->currentFx.FR;
-        Fx_RL = this->currentFx.RL;
-        Fx_RR = this->currentFx.RR;
-
-        double M_total_FL = M_FL - Fx_FL * this->wheelRadius;
-        double M_total_FR = M_FR - Fx_FR * this->wheelRadius;
-        double M_total_RL = M_RL - Fx_RL * this->wheelRadius;
-        double M_total_RR = M_RR - Fx_RR * this->wheelRadius;
-
-        // old calculation as backup for now
-        // Fx_FL = this->gearRatio*this->torques.FL / this->wheelRadius;
-        // Fx_FR = this->gearRatio*this->torques.FR / this->wheelRadius;
-        // Fx_RL = this->gearRatio*this->torques.RL / this->wheelRadius;
-        // Fx_RR = this->gearRatio*this->torques.RR / this->wheelRadius;
-
-        double Dlat_FL = this->Dlat * Fz_FL;
-        double Dlat_FR = this->Dlat * Fz_FR;
-        double Dlat_RL = this->Dlat * Fz_RL;
-        double Dlat_RR = this->Dlat * Fz_RR;
+        double Dlat_FL = this->Dlat * frictionCoefficients.FL * Fz_FL;
+        double Dlat_FR = this->Dlat * frictionCoefficients.FR * Fz_FR;
+        double Dlat_RL = this->Dlat * frictionCoefficients.RL * Fz_RL;
+        double Dlat_RR = this->Dlat * frictionCoefficients.RR * Fz_RR;
 
         Dlat_FL *= (vCog.norm() > 0.5)
             ? std::sqrt(std::max(1 - std::pow(Fx_FL / (Fz_FL * Dlon), 2.0), std::pow(0.1, 2.0)))
@@ -311,81 +331,41 @@ public:
             ? std::sqrt(std::max(1 - std::pow(Fx_FR / (Fz_RR * Dlon), 2.0), std::pow(0.1, 2.0)))
             : 1.0;
 
-        double Fy_FL = Dlat_FL * processSlipAngleLat(kappaFL);
-        double Fy_FR = Dlat_FR * processSlipAngleLat(kappaFR);
-        double Fy_RL = Dlat_RL * processSlipAngleLat(kappaRL);
-        double Fy_RR = Dlat_RR * processSlipAngleLat(kappaRR);
+        fy_stat_fl = Dlat_FL * processSlipAngleLat(kappaFL);
+        fy_stat_fr = Dlat_FR * processSlipAngleLat(kappaFR);
+        fy_stat_rl = Dlat_RL * processSlipAngleLat(kappaRL);
+        fy_stat_rr = Dlat_RR * processSlipAngleLat(kappaRR);
 
-        // double Fy_FL = std::max(std::min((std::abs(syfl)/absSlipFL),1.0), minCombinedSlipFactor) * (this->Dlat *
-        // Fz_FL) * processSlipAngleLat(kappaFL); double Fy_FR = std::max(std::min((std::abs(syfr)/absSlipFR),1.0),
-        // minCombinedSlipFactor) * (this->Dlat * Fz_FR) * processSlipAngleLat(kappaFR); double Fy_RL =
-        // std::max(std::min((std::abs(syrl)/absSlipRL),1.0), minCombinedSlipFactor) * (this->Dlat * Fz_RL) *
-        // processSlipAngleLat(kappaRL); double Fy_RR = std::max(std::min((std::abs(syrr)/absSlipRR),1.0),
-        // minCombinedSlipFactor) * (this->Dlat * Fz_RR) * processSlipAngleLat(kappaRR);
+        Eigen::Matrix<double, 8, 1> retVal;
+        retVal(0, 0) = fx_stat_fl;
+        retVal(1, 0) = fx_stat_fr;
+        retVal(2, 0) = fx_stat_rl;
+        retVal(3, 0) = fx_stat_rr;
 
-        // double relaxationTime = relaxationLengthLat / vFL.x()
-        if (vCog.norm() > 0.5)
-        {
-            this->currentFy.FL += dt * (Fy_FL - currentFy.FL) * this->wheelspeeds.FL * rpm2ms / relaxationLengthLat;
-            this->currentFy.FR += dt * (Fy_FR - currentFy.FR) * this->wheelspeeds.FR * rpm2ms / relaxationLengthLat;
-            this->currentFy.RL += dt * (Fy_RL - currentFy.RL) * this->wheelspeeds.RL * rpm2ms / relaxationLengthLat;
-            this->currentFy.RR += dt * (Fy_RR - currentFy.RR) * this->wheelspeeds.RR * rpm2ms / relaxationLengthLat;
-        }
-        else
-        {
-            this->currentFy.FL = Fy_FL;
-            this->currentFy.FR = Fy_FR;
-            this->currentFy.RL = Fy_RL;
-            this->currentFy.RR = Fy_RR;
-        }
+        retVal(4, 0) = fy_stat_fl;
+        retVal(5, 0) = fy_stat_fr;
+        retVal(6, 0) = fy_stat_rl;
+        retVal(7, 0) = fy_stat_rr;
 
-        Fy_FL = this->currentFy.FL;
-        Fy_FR = this->currentFy.FR;
-        Fy_RL = this->currentFy.RL;
-        Fy_RR = this->currentFy.RR;
-
-        // random value for wheel inertia
-        double J = 0.2;
-
-        this->wheelspeeds.FL += 60 * (M_total_FL * dt) / (J * 2 * M_PI);
-        this->wheelspeeds.FR += 60 * (M_total_FR * dt) / (J * 2 * M_PI);
-        this->wheelspeeds.RL += 60 * (M_total_RL * dt) / (J * 2 * M_PI);
-        this->wheelspeeds.RR += 60 * (M_total_RR * dt) / (J * 2 * M_PI);
-
-        double axTires = (std::cos(this->steeringAngles.FL) * Fx_FL - std::sin(this->steeringAngles.FL) * Fy_FL
-                             + std::cos(this->steeringAngles.FR) * Fx_FR - std::sin(this->steeringAngles.FR) * Fy_FR
-                             + std::cos(this->steeringAngles.RL) * Fx_RL - std::sin(this->steeringAngles.RL) * Fy_RL
-                             + std::cos(this->steeringAngles.RR) * Fx_RR - std::sin(this->steeringAngles.RR) * Fy_RR)
-            / m;
-        double axModel = axTires - F_aero_drag / m;
-
-        double ayTires = (std::sin(this->steeringAngles.FL) * Fx_FL + std::cos(this->steeringAngles.FL) * Fy_FL
-                             + std::sin(this->steeringAngles.FR) * Fx_FR + std::cos(this->steeringAngles.FR) * Fy_FR
-                             + std::sin(this->steeringAngles.RL) * Fx_RL + std::cos(this->steeringAngles.RL) * Fy_RL
-                             + std::sin(this->steeringAngles.RR) * Fx_RR + std::cos(this->steeringAngles.RR) * Fy_RR)
-            / m;
-        double ayModel = (ayTires);
-
-        double rdotFx
-            = 0.5 * this->sf * (-Fx_FL * std::cos(this->steeringAngles.FL) + Fx_FR * std::cos(this->steeringAngles.FR))
-            + this->lf * (Fx_FL * std::sin(this->steeringAngles.FL) + Fx_FR * std::sin(this->steeringAngles.FR))
-            + 0.5 * this->sr * (Fx_RR * std::cos(this->steeringAngles.RR) - Fx_RL * std::cos(this->steeringAngles.RL))
-            - this->lr * (Fx_RL * std::sin(this->steeringAngles.RL) + Fx_RR * std::sin(this->steeringAngles.RR));
-        double rdotFy
-            = 0.5 * this->sf * (Fy_FL * std::sin(this->steeringAngles.FL) - Fy_FR * std::sin(this->steeringAngles.FR))
-            + this->lf * (Fy_FL * std::cos(this->steeringAngles.FL) + Fy_FR * std::cos(this->steeringAngles.FR))
-            + 0.5 * this->sr * (-Fy_RR * std::sin(this->steeringAngles.RR) + Fy_RL * std::sin(this->steeringAngles.RL))
-            - this->lr * (Fy_RL * std::cos(this->steeringAngles.RL) + Fy_RR * std::cos(this->steeringAngles.RR));
-        double rdot = (1 / Izz * (rdotFx + rdotFy));
-
-        Eigen::Vector3d ret(axModel, ayModel, rdot);
-        return ret;
+        return retVal;
     }
 
-    Wheels inverterWheelspeedControl(double dt)
+    Eigen::Matrix<double, 8, 1> inverterWheelspeedControl(
+        Eigen::Matrix<double, 24, 1> stateVector, Eigen::Matrix<double, 13, 1> uVector)
     {
-        Wheels error = { this->rpmSetpoints.FL - this->wheelspeeds.FL, this->rpmSetpoints.FR - this->wheelspeeds.FR,
-            this->rpmSetpoints.RL - this->wheelspeeds.RL, this->rpmSetpoints.RR - this->wheelspeeds.RR };
+        Wheels rpmSetpoints { uVector(1, 0), uVector(2, 0), uVector(3, 0), uVector(4, 0) };
+        Wheels maxTorques { uVector(5, 0), uVector(6, 0), uVector(7, 0), uVector(8, 0) };
+        Wheels minTorques { uVector(9, 0), uVector(10, 0), uVector(11, 0), uVector(12, 0) };
+        Wheels wheelspeeds { stateVector(14, 0), stateVector(15, 0), stateVector(16, 0), stateVector(17, 0) };
+
+        Wheels error = { rpmSetpoints.FL - wheelspeeds.FL, rpmSetpoints.FR - wheelspeeds.FR,
+            rpmSetpoints.RL - wheelspeeds.RL, rpmSetpoints.RR - wheelspeeds.RR };
+        Wheels wspdControlErrorIntegrator;
+        wspdControlErrorIntegrator.FL = stateVector(18, 0);
+        wspdControlErrorIntegrator.FR = stateVector(19, 0);
+        wspdControlErrorIntegrator.RL = stateVector(20, 0);
+        wspdControlErrorIntegrator.RR = stateVector(21, 0);
+
         double kp = this->wspdControlKp;
         double ki = this->wspdControlKi;
         double FLt = error.FL * kp + wspdControlErrorIntegrator.FL * ki;
@@ -397,48 +377,261 @@ public:
         double RRt = error.RR * kp + wspdControlErrorIntegrator.RR * ki;
         RRt = std::max(std::min(RRt, maxTorques.RR), minTorques.RR);
 
-        Wheels ret = { FLt, FRt, RLt, RRt };
-        Wheels integrator = { this->wspdControlErrorIntegrator.FL + dt * error.FL,
-            this->wspdControlErrorIntegrator.FR + dt * error.FR, this->wspdControlErrorIntegrator.RL + dt * error.RL,
-            this->wspdControlErrorIntegrator.RR + dt * error.RR };
-        wspdControlErrorIntegrator.FL = std::max(std::min(integrator.FL, std::max(maxTorques.FL - error.FL * kp, 0.0)),
-            std::min(minTorques.FL - error.FL * kp, 0.0));
-        wspdControlErrorIntegrator.FR = std::max(std::min(integrator.FR, std::max(maxTorques.FR - error.FR * kp, 0.0)),
-            std::min(minTorques.FR - error.FR * kp, 0.0));
-        wspdControlErrorIntegrator.RL = std::max(std::min(integrator.RL, std::max(maxTorques.RL - error.RL * kp, 0.0)),
-            std::min(minTorques.RL - error.RL * kp, 0.0));
-        wspdControlErrorIntegrator.RR = std::max(std::min(integrator.RR, std::max(maxTorques.RR - error.RR * kp, 0.0)),
-            std::min(minTorques.RR - error.RR * kp, 0.0));
+        Eigen::Matrix<double, 8, 1> ret;
+        ret(0, 0) = FLt;
+        ret(1, 0) = FRt;
+        ret(2, 0) = RLt;
+        ret(3, 0) = RRt;
+
+        ret(4, 0) = error.FL;
+        ret(5, 0) = error.FR;
+        ret(6, 0) = error.RL;
+        ret(7, 0) = error.RR;
         return ret;
+    }
+
+    Eigen::Matrix<double, 24, 1> getX_dot(
+        Eigen::Matrix<double, 24, 1> state, Eigen::Matrix<double, 13, 1> uVector, Wheels frictionCoefficients)
+    {
+
+        Eigen::Matrix<double, 8, 1> inverterStuff = inverterWheelspeedControl(state, uVector);
+
+        Wheels wheelTorques;
+        wheelTorques.FL = inverterStuff(0, 0);
+        wheelTorques.FR = inverterStuff(1, 0);
+        wheelTorques.RL = inverterStuff(2, 0);
+        wheelTorques.RR = inverterStuff(3, 0);
+
+        Eigen::Matrix<double, 4, 1> uVectorSimple;
+        uVectorSimple(0, 0) = wheelTorques.FL;
+        uVectorSimple(1, 0) = wheelTorques.FR;
+        uVectorSimple(2, 0) = wheelTorques.RL;
+        uVectorSimple(3, 0) = wheelTorques.RR;
+
+        Eigen::Matrix<double, 8, 1> tireForces = getTireForcesStationary(state, uVectorSimple, frictionCoefficients);
+
+        Eigen::Vector3d velocity(state(3, 0), state(4, 0), 0.0);
+        Eigen::Vector3d angularVelocity(0.0, 0.0, state(5, 0));
+
+        double l = this->lr + this->lf;
+        double vx = velocity.x();
+        double vy = velocity.y();
+
+        // random value for wheel inertia
+        double J = 0.2;
+
+        double Fx_FL = state(6, 0);
+        double Fx_FR = state(7, 0);
+        double Fx_RL = state(8, 0);
+        double Fx_RR = state(9, 0);
+
+        double Fy_FL = state(10, 0);
+        double Fy_FR = state(11, 0);
+        double Fy_RL = state(12, 0);
+        double Fy_RR = state(13, 0);
+
+        double F_aero_downforce = 0.5 * 1.29 * this->aeroArea * this->cla * (vx * vx) + this->powerGroundSetpoint * this->powerGroundForce;
+        double F_aero_drag = 0.5 * 1.29 * this->aeroArea * this->cda * (vx * vx);
+
+        Eigen::Vector3d friction(std::min(200.0, 2000.0 * std::abs(velocity.x())),
+            std::min(200.0, 2000.0 * std::abs(velocity.y())), std::min(200.0, 2000.0 * std::abs(velocity.z())));
+        friction[0] = (velocity.x() > 0) ? friction.x() : -friction.x();
+        friction[1] = (velocity.y() > 0) ? friction.y() : -friction.y();
+        friction[2] = (velocity.z() > 0) ? friction.z() : -friction.z();
+
+        double leftSteering, rightSteering;
+        steeringKinematic(state(22, 0), leftSteering, rightSteering);
+
+        double axTires = (std::cos(leftSteering) * Fx_FL - std::sin(leftSteering) * Fy_FL
+                             + std::cos(rightSteering) * Fx_FR - std::sin(rightSteering) * Fy_FR
+                             + std::cos(this->steeringAngles.RL) * Fx_RL - std::sin(this->steeringAngles.RL) * Fy_RL
+                             + std::cos(this->steeringAngles.RR) * Fx_RR - std::sin(this->steeringAngles.RR) * Fy_RR)
+            / m;
+        double axModel = axTires - (F_aero_drag - friction.x()) / m;
+
+        double ayTires = (std::sin(leftSteering) * Fx_FL + std::cos(leftSteering) * Fy_FL
+                             + std::sin(rightSteering) * Fx_FR + std::cos(rightSteering) * Fy_FR
+                             + std::sin(this->steeringAngles.RL) * Fx_RL + std::cos(this->steeringAngles.RL) * Fy_RL
+                             + std::sin(this->steeringAngles.RR) * Fx_RR + std::cos(this->steeringAngles.RR) * Fy_RR)
+            / m;
+        double ayModel = (ayTires);
+
+        double rdotFx = 0.5 * this->sf * (-Fx_FL * std::cos(leftSteering) + Fx_FR * std::cos(rightSteering))
+            + this->lf * (Fx_FL * std::sin(leftSteering) + Fx_FR * std::sin(rightSteering))
+            + 0.5 * this->sr * (Fx_RR * std::cos(this->steeringAngles.RR) - Fx_RL * std::cos(this->steeringAngles.RL))
+            - this->lr * (Fx_RL * std::sin(this->steeringAngles.RL) + Fx_RR * std::sin(this->steeringAngles.RR));
+        double rdotFy = 0.5 * this->sf * (Fy_FL * std::sin(leftSteering) - Fy_FR * std::sin(rightSteering))
+            + this->lf * (Fy_FL * std::cos(leftSteering) + Fy_FR * std::cos(rightSteering))
+            + 0.5 * this->sr * (-Fy_RR * std::sin(this->steeringAngles.RR) + Fy_RL * std::sin(this->steeringAngles.RL))
+            - this->lr * (Fy_RL * std::cos(this->steeringAngles.RL) + Fy_RR * std::cos(this->steeringAngles.RR));
+
+        double M_FL = this->gearRatio * wheelTorques.FL;
+        double M_FR = this->gearRatio * wheelTorques.FR;
+        double M_RL = this->gearRatio * wheelTorques.RL;
+        double M_RR = this->gearRatio * wheelTorques.RR;
+
+        double M_total_FL = M_FL - Fx_FL * this->wheelRadius;
+        double M_total_FR = M_FR - Fx_FR * this->wheelRadius;
+        double M_total_RL = M_RL - Fx_RL * this->wheelRadius;
+        double M_total_RR = M_RR - Fx_RR * this->wheelRadius;
+
+        Eigen::Vector3d aModel(axModel, ayModel, 0.0);
+        Eigen::Vector3d vdot = aModel - angularVelocity.cross(velocity);
+
+        double xdot = vx * std::cos(state(2, 0)) - vy * std::sin(state(2, 0));
+        double ydot = vx * std::sin(state(2, 0)) + vy * std::cos(state(2, 0));
+
+        double phidot = angularVelocity.z();
+        double vxdot = vdot.x();
+        double vydot = vdot.y();
+        double rdot = (1 / Izz * (rdotFx + rdotFy));
+
+        double fx_fl_dot
+            = (tireForces(0, 0) - state(6, 0)) / (this->relaxationLengthLon / std::max(velocity.x(), 5.0));
+        double fx_fr_dot
+            = (tireForces(1, 0) - state(7, 0)) / (this->relaxationLengthLon / std::max(velocity.x(), 5.0));
+        double fx_rl_dot
+            = (tireForces(2, 0) - state(8, 0)) / (this->relaxationLengthLon / std::max(velocity.x(), 5.0));
+        double fx_rr_dot
+            = (tireForces(3, 0) - state(9, 0)) / (this->relaxationLengthLon / std::max(velocity.x(), 5.0));
+
+        double fy_fl_dot
+            = (tireForces(4, 0) - state(10, 0)) / (this->relaxationLengthLat / std::max(velocity.x(), 5.0));
+        double fy_fr_dot
+            = (tireForces(5, 0) - state(11, 0)) / (this->relaxationLengthLat / std::max(velocity.x(), 5.0));
+        double fy_rl_dot
+            = (tireForces(6, 0) - state(12, 0)) / (this->relaxationLengthLat / std::max(velocity.x(), 5.0));
+        double fy_rr_dot
+            = (tireForces(7, 0) - state(13, 0)) / (this->relaxationLengthLat / std::max(velocity.x(), 5.0));
+
+        double omega_fl_dot = 60 * (M_total_FL) / (J * 2 * M_PI);
+        double omega_fr_dot = 60 * (M_total_FR) / (J * 2 * M_PI);
+        double omega_rl_dot = 60 * (M_total_RL) / (J * 2 * M_PI);
+        double omega_rr_dot = 60 * (M_total_RR) / (J * 2 * M_PI);
+
+        double integrator_fl_dot = inverterStuff(4, 0);
+        double integrator_fr_dot = inverterStuff(5, 0);
+        double integrator_rl_dot = inverterStuff(6, 0);
+        double integrator_rr_dot = inverterStuff(7, 0);
+
+        double steering_a2 = 1 / (this->steering_w0 * this->steering_w0);
+        double steering_a1 = 2 * this->steering_d / this->steering_w0;
+        double steering_a0 = 1.0;
+        double steering_acceleration
+            = (steeringFrontSetpoint - steering_a0 * state(22, 0) - steering_a1 * state(23, 0)) / steering_a2;
+        double steering_speed = std::min(std::max(state(23, 0), -this->steering_max_rate), this->steering_max_rate);
+
+        // x,y,phi,vx,vy,r  fx(4), fx(4), omega(4), int_int(4), steering_pos, steering_vel
+        Eigen::Matrix<double, 24, 1> ret;
+        ret(0, 0) = xdot;
+        ret(1, 0) = ydot;
+        ret(2, 0) = phidot;
+        ret(3, 0) = vxdot;
+        ret(4, 0) = vydot;
+        ret(5, 0) = rdot;
+
+        ret(6, 0) = fx_fl_dot;
+        ret(7, 0) = fx_fr_dot;
+        ret(8, 0) = fx_rl_dot;
+        ret(9, 0) = fx_rr_dot;
+
+        ret(10, 0) = fy_fl_dot;
+        ret(11, 0) = fy_fr_dot;
+        ret(12, 0) = fy_rl_dot;
+        ret(13, 0) = fy_rr_dot;
+
+        ret(14, 0) = omega_fl_dot;
+        ret(15, 0) = omega_fr_dot;
+        ret(16, 0) = omega_rl_dot;
+        ret(17, 0) = omega_rr_dot;
+
+        ret(18, 0) = integrator_fl_dot;
+        ret(19, 0) = integrator_fr_dot;
+        ret(20, 0) = integrator_rl_dot;
+        ret(21, 0) = integrator_rr_dot;
+
+        ret(22, 0) = steering_speed;
+        ret(23, 0) = steering_acceleration;
+
+        return ret;
+    }
+
+    Eigen::Matrix<double, 24, 1> capStates(Eigen::Matrix<double, 24, 1> state, Eigen::Matrix<double, 13, 1> uVector,
+        Wheels frictionCoefficients, Eigen::Matrix<double, 24, 1> xDot)
+    {
+        Eigen::Matrix<double, 24, 1> ret = state;
+
+        double kp = this->wspdControlKp;
+        double ki = this->wspdControlKi;
+
+        ret(18, 0) = std::max(std::min(ret(18, 0), std::max(maxTorques.FL - xDot(18, 0) * kp, 0.0)),
+            std::min(minTorques.FL - xDot(18, 0) * kp, 0.0));
+        ret(19, 0) = std::max(std::min(ret(19, 0), std::max(maxTorques.FR - xDot(19, 0) * kp, 0.0)),
+            std::min(minTorques.FR - xDot(19, 0) * kp, 0.0));
+        ret(20, 0) = std::max(std::min(ret(20, 0), std::max(maxTorques.RL - xDot(20, 0) * kp, 0.0)),
+            std::min(minTorques.RL - xDot(20, 0) * kp, 0.0));
+        ret(21, 0) = std::max(std::min(ret(21, 0), std::max(maxTorques.RR - xDot(21, 0) * kp, 0.0)),
+            std::min(minTorques.RR - xDot(21, 0) * kp, 0.0));
+
+        ret(22, 0) = std::min(std::max(ret(22, 0), -this->steering_max), this->steering_max);
+        ret(23, 0) = std::min(std::max(ret(23, 0), -this->steering_max_rate), this->steering_max_rate);
+
+        return ret;
+    }
+
+    Eigen::Matrix<double, 24, 1> eulerIntegration(double dt, Eigen::Matrix<double, 24, 1> state,
+        Eigen::Matrix<double, 13, 1> uVector, Wheels frictionCoefficients, Eigen::Matrix<double, 24, 1>& xDotOut)
+    {
+        Eigen::Matrix<double, 24, 1> xdot = getX_dot(state, uVector, frictionCoefficients);
+        state = state + dt * xdot;
+        Eigen::Matrix<double, 24, 1> cappedState = capStates(state, uVector, frictionCoefficients, xdot);
+        xDotOut = xdot;
+        return cappedState;
     }
 
     void forwardIntegrate(double dt, Wheels frictionCoefficients)
     {
-        Eigen::Vector3d friction(std::min(200.0, 2000.0 * std::abs(this->velocity.x())),
-            std::min(200.0, 2000.0 * std::abs(this->velocity.y())),
-            std::min(200.0, 2000.0 * std::abs(this->velocity.z())));
-        friction[0] = (this->velocity.x() > 0) ? friction.x() : -friction.x();
-        friction[1] = (this->velocity.y() > 0) ? friction.y() : -friction.y();
-        friction[2] = (this->velocity.z() > 0) ? friction.z() : -friction.z();
+        Eigen::Matrix<double, 13, 1> uvector;
 
-        Eigen::AngleAxisd yawAngle(this->orientation.z(), Eigen::Vector3d::UnitZ());
-        this->position += (yawAngle.matrix() * this->velocity) * dt;
+        uvector(0, 0) = this->steeringFrontSetpoint;
+        uvector(1, 0) = this->rpmSetpoints.FL;
+        uvector(2, 0) = this->rpmSetpoints.FR;
+        uvector(3, 0) = this->rpmSetpoints.RL;
+        uvector(4, 0) = this->rpmSetpoints.RR;
 
-        this->torques = this->maxTorques;
+        uvector(5, 0) = this->maxTorques.FL;
+        uvector(6, 0) = this->maxTorques.FR;
+        uvector(7, 0) = this->maxTorques.RL;
+        uvector(8, 0) = this->maxTorques.RR;
 
-        this->torques = inverterWheelspeedControl(dt);
-        
-        Eigen::Vector3d xdotdyn = getDynamicStates(dt, frictionCoefficients);
+        uvector(9, 0) = this->minTorques.FL;
+        uvector(10, 0) = this->minTorques.FR;
+        uvector(11, 0) = this->minTorques.RL;
+        uvector(12, 0) = this->minTorques.RR;
 
-        this->orientation += Eigen::Vector3d(0.0, 0.0, dt * angularVelocity.z());
+        Eigen::Matrix<double, 24, 1> stateVector = this->stateVectorBck;
+        Eigen::Matrix<double, 24, 1> xDot;
+        this->stateVectorBck = eulerIntegration(dt, stateVector, uvector, frictionCoefficients, xDot);
+        this->position[0] = this->stateVectorBck(0, 0);
+        this->position[1] = this->stateVectorBck(1, 0);
 
-        this->acceleration = Eigen::Vector3d(xdotdyn[0] - friction.x() / m, xdotdyn[1], 0.0);
+        this->orientation[2] = this->stateVectorBck(2, 0);
 
-        this->angularVelocity = (this->angularVelocity + Eigen::Vector3d(0.0, 0.0, xdotdyn[2] * dt));
+        this->velocity[0] = this->stateVectorBck(3, 0);
+        this->velocity[1] = this->stateVectorBck(4, 0);
 
-        this->angularAcceleration = Eigen::Vector3d(0.0, 0.0, xdotdyn[2]);
+        this->angularVelocity[2] = this->stateVectorBck(5, 0);
 
-        this->velocity += dt * (this->acceleration - this->angularVelocity.cross(this->velocity));
+        this->acceleration[2] = xDot(5, 0);
+
+        this->wheelspeeds.FL = this->stateVectorBck(14, 0);
+        this->wheelspeeds.FR = this->stateVectorBck(15, 0);
+        this->wheelspeeds.RL = this->stateVectorBck(16, 0);
+        this->wheelspeeds.RR = this->stateVectorBck(17, 0);
+
+        setSteeringFront(this->stateVectorBck(22, 0));
+
+        // really no need to do anything complex for this since it's only cosmetic
         this->wheelOrientations.FL = std::fmod(
             this->wheelOrientations.FL + (this->wheelspeeds.FL / (60.0 * this->gearRatio)) * dt * 2.0 * M_PI,
             2.0 * M_PI);
@@ -463,13 +656,13 @@ private:
     double Clat = -1.39;
     double Dlat = 1.6;
     double Elat = 1.0;
-    double relaxationLengthLat = 0.2;
-    
+    double relaxationLengthLat = 0.1;
+
     double Blon = 11.5;
     double Clon = 2.196;
     double Dlon = 1.6;
     double Elon = 1.0;
-    double relaxationLengthLon = 0.1;
+    double relaxationLengthLon = 0.05;
 
     double cla = 3.7;
     double cda = 1.1;
@@ -495,4 +688,14 @@ private:
     Wheels rpmSetpoints = { 0.0, 0.0, 0.0, 0.0 };
     Wheels currentFx = { 0.0, 0.0, 0.0, 0.0 };
     Wheels currentFy = { 0.0, 0.0, 0.0, 0.0 };
+
+    double steeringFrontSetpoint = 0.0;
+
+    double steering_w0 = 35.0;
+    double steering_d = 0.6;
+    double steering_max = 1.834;
+    double steering_max_rate = 5.0;
+
+    // x,y,phi,vx,vy,r, fx(4), fy(4), omega(4), int_int(4), steering_position, steering_speed
+    Eigen::Matrix<double, 24, 1> stateVectorBck;
 };
