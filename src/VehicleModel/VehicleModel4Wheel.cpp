@@ -196,6 +196,12 @@ public:
         Eigen::Vector3d velocity(stateVector(3, 0), stateVector(4, 0), 0.0);
         Eigen::Vector3d angularVelocity(0.0, 0.0, stateVector(5, 0));
 
+        Eigen::Vector3d friction(std::min(200.0, 2000.0 * std::abs(velocity.x())),
+        std::min(200.0, 2000.0 * std::abs(velocity.y())), std::min(200.0, 2000.0 * std::abs(velocity.z())));
+        friction[0] = (velocity.x() > 0) ? friction.x() : -friction.x();
+        friction[1] = (velocity.y() > 0) ? friction.y() : -friction.y();
+        friction[2] = (velocity.z() > 0) ? friction.z() : -friction.z();
+
         double l = this->lr + this->lf;
         double vx = velocity.x();
         double vy = velocity.y();
@@ -221,7 +227,7 @@ public:
                              + std::cos(this->steeringAngles.RL) * Fx_RL - std::sin(this->steeringAngles.RL) * Fy_RL
                              + std::cos(this->steeringAngles.RR) * Fx_RR - std::sin(this->steeringAngles.RR) * Fy_RR)
             / m;
-        double ax = axTires - F_aero_drag / m;
+        double ax = axTires - (F_aero_drag + friction.x()) / m;
 
         double ayTires = (std::sin(leftSteering) * Fx_FL + std::cos(leftSteering) * Fy_FL
                              + std::sin(rightSteering) * Fx_FR + std::cos(rightSteering) * Fy_FR
@@ -391,7 +397,7 @@ public:
     }
 
     Eigen::Matrix<double, 24, 1> getX_dot(
-        Eigen::Matrix<double, 24, 1> state, Eigen::Matrix<double, 13, 1> uVector, Wheels frictionCoefficients)
+        Eigen::Matrix<double, 24, 1> state, Eigen::Matrix<double, 13, 1> uVector, Wheels frictionCoefficients, Eigen::Matrix<double, 2,1>& helperOutputs)
     {
 
         Eigen::Matrix<double, 8, 1> inverterStuff = inverterWheelspeedControl(state, uVector);
@@ -447,7 +453,7 @@ public:
                              + std::cos(this->steeringAngles.RL) * Fx_RL - std::sin(this->steeringAngles.RL) * Fy_RL
                              + std::cos(this->steeringAngles.RR) * Fx_RR - std::sin(this->steeringAngles.RR) * Fy_RR)
             / m;
-        double axModel = axTires - (F_aero_drag - friction.x()) / m;
+        double axModel = axTires - (F_aero_drag + friction.x()) / m;
 
         double ayTires = (std::sin(leftSteering) * Fx_FL + std::cos(leftSteering) * Fy_FL
                              + std::sin(rightSteering) * Fx_FR + std::cos(rightSteering) * Fy_FR
@@ -553,6 +559,8 @@ public:
         ret(22, 0) = steering_speed;
         ret(23, 0) = steering_acceleration;
 
+        helperOutputs(0, 0) = axModel;
+        helperOutputs(1, 0) = ayModel;
         return ret;
     }
 
@@ -580,14 +588,35 @@ public:
     }
 
     Eigen::Matrix<double, 24, 1> eulerIntegration(double dt, Eigen::Matrix<double, 24, 1> state,
-        Eigen::Matrix<double, 13, 1> uVector, Wheels frictionCoefficients, Eigen::Matrix<double, 24, 1>& xDotOut)
+        Eigen::Matrix<double, 13, 1> uVector, Wheels frictionCoefficients, Eigen::Matrix<double, 2,1>& helperOutputs)
     {
-        Eigen::Matrix<double, 24, 1> xdot = getX_dot(state, uVector, frictionCoefficients);
+        Eigen::Matrix<double, 24, 1> xdot = getX_dot(state, uVector, frictionCoefficients, helperOutputs);
         state = state + dt * xdot;
         Eigen::Matrix<double, 24, 1> cappedState = capStates(state, uVector, frictionCoefficients, xdot);
-        xDotOut = xdot;
         return cappedState;
     }
+
+    Eigen::Matrix<double, 24, 1> rk4Integration(double dt, Eigen::Matrix<double, 24, 1> state,
+      Eigen::Matrix<double, 13, 1> uVector, Wheels frictionCoefficients, Eigen::Matrix<double, 2,1>& helperOutputs)
+  {
+    Eigen::Matrix<double, 2, 1> helpers1;
+      Eigen::Matrix<double, 24, 1> k1 = getX_dot(state, uVector, frictionCoefficients, helpers1);
+      Eigen::Matrix<double, 24, 1> tempState1 = state + 0.5 * dt * k1;
+      Eigen::Matrix<double, 2, 1> helpers2;
+      Eigen::Matrix<double, 24, 1> k2 = getX_dot(tempState1, uVector, frictionCoefficients, helpers2);
+      Eigen::Matrix<double, 24, 1> tempState2 = state + 0.5 * dt * k2;
+      Eigen::Matrix<double, 2, 1> helpers3;
+      Eigen::Matrix<double, 24, 1> k3 = getX_dot(tempState2, uVector, frictionCoefficients, helpers3);
+      Eigen::Matrix<double, 24, 1> tempState3 = state + 1.0 * dt * k3;
+      Eigen::Matrix<double, 2, 1> helpers4;
+      Eigen::Matrix<double, 24, 1> k4 = getX_dot(tempState3, uVector, frictionCoefficients, helpers4);
+      state = state + dt * (1.0/6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
+      Eigen::Matrix<double, 24, 1> xdot = (1.0 / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
+      Eigen::Matrix<double, 2, 1> helpers = (1.0 / 6.0) * (helpers1 + 2.0 * helpers2 + 2.0 * helpers3 + helpers4);
+      Eigen::Matrix<double, 24, 1> cappedState = capStates(state, uVector, frictionCoefficients, xdot);
+      helperOutputs = helpers;
+      return cappedState;
+  }
 
     void forwardIntegrate(double dt, Wheels frictionCoefficients)
     {
@@ -610,8 +639,9 @@ public:
         uvector(12, 0) = this->minTorques.RR;
 
         Eigen::Matrix<double, 24, 1> stateVector = this->stateVectorBck;
-        Eigen::Matrix<double, 24, 1> xDot;
-        this->stateVectorBck = eulerIntegration(dt, stateVector, uvector, frictionCoefficients, xDot);
+        Eigen::Matrix<double, 2, 1> helperVars;
+
+        this->stateVectorBck = rk4Integration(dt, stateVector, uvector, frictionCoefficients, helperVars);
         this->position[0] = this->stateVectorBck(0, 0);
         this->position[1] = this->stateVectorBck(1, 0);
 
@@ -622,12 +652,20 @@ public:
 
         this->angularVelocity[2] = this->stateVectorBck(5, 0);
 
-        this->acceleration[2] = xDot(5, 0);
+        this->acceleration[0] = helperVars(0,0);
+        this->acceleration[1] = helperVars(1,0);
+        this->acceleration[2] = 0.0;
 
         this->wheelspeeds.FL = this->stateVectorBck(14, 0);
         this->wheelspeeds.FR = this->stateVectorBck(15, 0);
         this->wheelspeeds.RL = this->stateVectorBck(16, 0);
         this->wheelspeeds.RR = this->stateVectorBck(17, 0);
+
+        Eigen::Matrix<double, 8, 1> inverterTorques = inverterWheelspeedControl(this->stateVectorBck, uvector);
+        this->torques.FL = inverterTorques(0, 0);
+        this->torques.FR = inverterTorques(1, 0);
+        this->torques.RL = inverterTorques(2, 0);
+        this->torques.RR = inverterTorques(3, 0);
 
         setSteeringFront(this->stateVectorBck(22, 0));
 
