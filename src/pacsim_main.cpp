@@ -663,7 +663,7 @@ int main(int argc, char** argv)
 
     jointStatePublisher = node->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 3);
 
-    model = std::make_shared<VehicleModelBicycle>();
+    model = std::make_shared<VehicleModel4Wheel>();
     Config modelConfig(vehicle_model_config_path);
     auto configVehicleModel = modelConfig.getElement("vehicle_model");
     model->readConfig(configVehicleModel);
