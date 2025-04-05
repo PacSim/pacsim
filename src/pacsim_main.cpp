@@ -17,6 +17,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 
 #include "VehicleModel/VehicleModelBicycle.cpp"
+#include "VehicleModel/VehicleModel4Wheel.cpp"
 #include "configParser.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
