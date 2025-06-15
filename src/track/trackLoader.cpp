@@ -1,7 +1,4 @@
 #include "track/trackLoader.hpp"
-#include "yaml-cpp/yaml.h"
-#include <iostream>
-#include <string>
 
 using namespace std;
 using namespace YAML;
@@ -88,6 +85,13 @@ Track loadMap(string mapPath, Eigen::Vector3d& start_position, Eigen::Vector3d& 
     addLandmarks(&ret.right_lane, &right, &coneCounter);
     addTimeKeepings(&ret.time_keeping_gates, &time_keeping, &coneCounter);
     addLandmarks(&ret.unknown, &unknown, &coneCounter);
+
+
+    auto indices = getMiddleLine(ret);
+    for(auto ind : indices) {
+        ret.path_left_point_indices.push_back(ind.first);
+        ret.path_right_points_indices.push_back(ind.second);
+    }    
 
     return ret;
 }
