@@ -45,6 +45,9 @@ struct Track
     std::vector<std::pair<Landmark, Landmark>> time_keeping_gates;
     Eigen::Vector3d gnssOrigin;
     Eigen::Vector3d enuToTrackRotation;
+
+    std::vector<size_t> path_left_point_indices;
+    std::vector<size_t> path_right_points_indices;
 };
 struct LandmarkList
 {
