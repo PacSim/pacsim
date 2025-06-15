@@ -34,6 +34,11 @@ ConfigElement ConfigElement::getElement(string elementName)
     return this->node[elementName];
 }
 
+ConfigElement ConfigElement::getConfigElement(string elementName)
+{
+    return this->getElement(elementName);
+}
+
 bool ConfigElement::hasElement(string elementName)
 {
     if (this->type != NodeType::Map && this->type != NodeType::Scalar)

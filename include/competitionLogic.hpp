@@ -5,6 +5,7 @@
 #include "types.hpp"
 #include <iostream>
 #include <string>
+#include <memory>
 
 class CompetitionLogic
 {
