@@ -61,6 +61,7 @@ rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clockPub;
 rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr velocity_pub;
 rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub;
 rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr mapVizPub;
+rclcpp::Publisher<pacsim::msg::Track>::SharedPtr trackPub;
 rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringFrontPub;
 rclcpp::Publisher<pacsim::msg::StampedScalar>::SharedPtr steeringRearPub;
 rclcpp::Publisher<pacsim::msg::Wheels>::SharedPtr wheelspeedPub;
@@ -102,7 +103,7 @@ std::string sensors_config_path;
 std::string vehicle_model_config_path;
 std::string discipline;
 std::vector<std::string> jointNames
-    = { "FL_steer", "FL_rotate", "FR_steer", "FR_rotate", "RR_rotate", "RL_rotate", "steering" };
+    = { "RR_steer","RL_steer","FL_steer", "FR_steer", "FL_rotate", "FR_rotate", "RR_rotate", "RL_rotate", "steering" };
 double realtimeRatio = 1.0;
 MainConfig mainConfig;
 std::vector<std::shared_ptr<PerceptionSensor>> perceptionSensors;
@@ -160,6 +161,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
 
     visualization_msgs::msg::MarkerArray mapMarkerMsg = mapMarkersWrapper.markerFromLMs(lms, trackFrame, 0.0);
     mapVizPub->publish(mapMarkerMsg);
+    trackPub->publish(createRosTrackMessage(lms, "map", 0.0));
 
     deadTimeSteeringFront = DeadTime<double>(0.05);
     deadTimeSteeringRear = DeadTime<double>(0.05);
@@ -324,6 +326,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
                 perceptionSensorVizPublisherMap[perceptionSensor]->publish(lmsMarkerMsg);
 
                 mapVizPub->publish(mapMarkerMsg);
+                trackPub->publish(createRosTrackMessage(lms, "map", simTime));
                 pacsim::msg::PerceptionDetections lmsMsg
                     = LandmarkListToRosMessage(sensorLms, sensorLms.frame_id, sensorLms.timestamp);
                 perceptionSensorPublisherMap[perceptionSensor]->publish(lmsMsg);
@@ -358,7 +361,9 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
             torquesPub->publish(torquesMsg);
         }
 
-        std::vector<double> jointMsg = { steeringCurr.FL, orientation.FL, steeringCurr.FR, orientation.FR,
+
+
+        std::vector<double> jointMsg = { steeringCurr.RR,steeringCurr.RL,steeringCurr.FL,  steeringCurr.FR,orientation.FL, orientation.FR,
             orientation.RR, orientation.RL, -steeringWheelCurr };
         sensor_msgs::msg::JointState jointStamped = createRosJointMsg(jointNames, jointMsg, simTime);
         jointStatePublisher->publish(jointStamped);
@@ -512,7 +517,7 @@ void initSensors()
     auto frontSteeringConfig = sensorsConfig.getElement("steering_front");
     steeringSensorFront->readConfig(frontSteeringConfig);
     steeringSensorRear = std::make_shared<ScalarValueSensor>(200.0, 0.005);
-    auto rearSteeringConfig = sensorsConfig.getElement("steering_front");
+    auto rearSteeringConfig = sensorsConfig.getElement("steering_rear");
     steeringSensorRear->readConfig(rearSteeringConfig);
     auto wheelSpeedConfig = sensorsConfig.getElement("wheelspeeds");
     wheelspeedSensor = std::make_shared<WheelsSensor>(200.0, 0.005);
@@ -609,7 +614,9 @@ int main(int argc, char** argv)
 
     clockPub = node->create_publisher<rosgraph_msgs::msg::Clock>("/clock", 1);
 
-    mapVizPub = node->create_publisher<visualization_msgs::msg::MarkerArray>("/pacsim/map", 1);
+    mapVizPub = node->create_publisher<visualization_msgs::msg::MarkerArray>("/pacsim/track/visualization", 1);
+
+    trackPub = node->create_publisher<pacsim::msg::Track>("/pacsim/track/landmarks", 1);
 
     auto finishSignalServer = node->create_service<std_srvs::srv::Empty>("/pacsim/finish_signal", cbFinishSignal);
     auto clockTriggerAbsoluteServer = node->create_service<pacsim::srv::ClockTriggerAbsolute>(
