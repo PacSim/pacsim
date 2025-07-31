@@ -137,7 +137,7 @@ int threadMainLoopFunc(std::shared_ptr<rclcpp::Node> node)
 
     Eigen::Vector3d start_position;
     Eigen::Vector3d start_orientation;
-    Track lms = loadMap(trackName, start_position, start_orientation);
+    Track lms = loadMap(trackName, start_position, start_orientation, false);
 
     model->setPosition(start_position);
     model->setOrientation(start_orientation);

@@ -47,7 +47,7 @@ struct Track
     Eigen::Vector3d enuToTrackRotation;
 
     std::vector<size_t> path_left_point_indices;
-    std::vector<size_t> path_right_points_indices;
+    std::vector<size_t> path_right_point_indices;
 };
 struct LandmarkList
 {

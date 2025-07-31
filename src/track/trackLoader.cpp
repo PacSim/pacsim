@@ -14,7 +14,7 @@ Node fillChildNode(Node parentNode, string tag)
         throw runtime_error(string("Failed loading the map, no ") + tag);
 }
 
-void addLandmarks(std::vector<Landmark>* _ret, Node* list, int* _coneCounter)
+void addLandmarks(std::vector<Landmark>* _ret, Node* list, int* _coneCounter, bool flip_y)
 {
     Landmark lm;
     for (const_iterator it = list->begin(); it != list->end(); ++it)
@@ -24,13 +24,16 @@ void addLandmarks(std::vector<Landmark>* _ret, Node* list, int* _coneCounter)
         lm.id = *_coneCounter;
         (*_coneCounter)++;
         lm.position = Eigen::Vector3d(vi[0], vi[1], vi[2]);
+        if(flip_y) {
+            lm.position[1] = -lm.position[1];
+        }
         lm.type = stringToLandmarkType(position["class"].as<std::string>());
         lm.typeWeights[lm.type] = 1.0;
         _ret->push_back(lm);
     }
 }
 
-void addTimeKeepings(std::vector<std::pair<Landmark, Landmark>>* _ret, Node* list, int* _coneCounter)
+void addTimeKeepings(std::vector<std::pair<Landmark, Landmark>>* _ret, Node* list, int* _coneCounter, bool flip_y)
 {
     Landmark lm;
     std::vector<Landmark> lms;
@@ -41,6 +44,9 @@ void addTimeKeepings(std::vector<std::pair<Landmark, Landmark>>* _ret, Node* lis
         lm.id = *_coneCounter;
         (*_coneCounter)++;
         lm.position = Eigen::Vector3d(vi[0], vi[1], vi[2]);
+        if(flip_y) {
+            lm.position[1] = -lm.position[1];
+        }
         lm.type = stringToLandmarkType(position["class"].as<std::string>());
         lm.typeWeights[lm.type] = 1.0;
         lms.push_back(lm);
@@ -51,7 +57,7 @@ void addTimeKeepings(std::vector<std::pair<Landmark, Landmark>>* _ret, Node* lis
     }
 }
 
-Track loadMap(string mapPath, Eigen::Vector3d& start_position, Eigen::Vector3d& start_orientation)
+Track loadMap(string mapPath, Eigen::Vector3d& start_position, Eigen::Vector3d& start_orientation, bool flip_y)
 {
     Node map = LoadFile(mapPath);
     Node track = fillChildNode(map, "track");
@@ -81,16 +87,22 @@ Track loadMap(string mapPath, Eigen::Vector3d& start_position, Eigen::Vector3d& 
         ret.lanesFirstWithLastConnected = true;
     }
 
-    addLandmarks(&ret.left_lane, &left, &coneCounter);
-    addLandmarks(&ret.right_lane, &right, &coneCounter);
-    addTimeKeepings(&ret.time_keeping_gates, &time_keeping, &coneCounter);
-    addLandmarks(&ret.unknown, &unknown, &coneCounter);
+    if(!flip_y) {
+        addLandmarks(&ret.left_lane, &left, &coneCounter, flip_y);
+        addLandmarks(&ret.right_lane, &right, &coneCounter, flip_y);
+    }
+    else {
+        addLandmarks(&ret.left_lane, &right, &coneCounter, flip_y);
+        addLandmarks(&ret.right_lane, &left, &coneCounter, flip_y);
+    }
+    addTimeKeepings(&ret.time_keeping_gates, &time_keeping, &coneCounter, flip_y);
+    addLandmarks(&ret.unknown, &unknown, &coneCounter, flip_y);
 
 
     auto indices = getMiddleLine(ret);
     for(auto ind : indices) {
         ret.path_left_point_indices.push_back(ind.first);
-        ret.path_right_points_indices.push_back(ind.second);
+        ret.path_right_point_indices.push_back(ind.second);
     }    
 
     return ret;
