@@ -49,10 +49,11 @@ public:
 
     void fillReport(Report& report, double time);
 
+    std::vector<bool> pointsInTrackConnected(Track& track, std::vector<Eigen::Vector2d> points);
+
 private:
     bool pointInTriangle(Eigen::Vector2d a, Eigen::Vector2d b, Eigen::Vector2d c, Eigen::Vector2d point);
 
-    std::vector<bool> pointsInTrackConnected(Track& track, std::vector<Eigen::Vector2d> points);
 
     bool pointInPolygon(std::vector<Eigen::Vector2d> polyPoints, Eigen::Vector2d point);
 
