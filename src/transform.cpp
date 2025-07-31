@@ -37,6 +37,11 @@ LandmarkList transformLmList(LandmarkList& in, Eigen::Vector3d trans, Eigen::Vec
     Eigen::Vector3d transInverse = inverseTranslation(trans, rot);
 
     LandmarkList out;
+    out.fov_polygon = in.fov_polygon;
+    out.source_type = in.source_type;
+
+    out.frame_id = in.frame_id;
+    out.timestamp = in.timestamp;
     for (auto& lm : in.list)
     {
         Landmark temp = lm;
