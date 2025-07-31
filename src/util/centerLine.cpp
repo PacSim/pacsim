@@ -24,6 +24,23 @@ std::vector<std::pair<size_t, size_t>> getMiddleLine(Track& track) {
             auto pair = std::make_pair(n1->i, n1->j);
             ret.push_back(pair);
         }
+
+        // Apparently the frechet matchings aren't ordered properly
+        // TODO check whether this code is required because of a bug in the frechet code
+        std::sort(ret.begin(), 
+            ret.end(), 
+            [](std::pair<size_t, size_t> a, std::pair<size_t, size_t> b) 
+            {
+                // first order priority: left lane
+                if(a.first < b.first) {
+                    return true;
+                }
+                // second order priority: right lane
+                else if (a.first == b.first) {
+                    return a.second < b.second;
+                }
+                return false; 
+            });
     }
         
     return ret;
