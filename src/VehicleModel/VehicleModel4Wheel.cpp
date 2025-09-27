@@ -292,7 +292,7 @@ public:
         double kappaRL
             = std::atan2(vRL.y(), std::max(std::abs(wheelspeeds.RL * rpm2ms), eps)) - this->steeringAngles.RL;
         double kappaRR
-            = std::atan2(vRR.y(), std::max(std::abs(wheelspeeds.FR * rpm2ms), eps)) - this->steeringAngles.RR;
+            = std::atan2(vRR.y(), std::max(std::abs(wheelspeeds.RR * rpm2ms), eps)) - this->steeringAngles.RR;
 
         // don't steer when vehicle doesn't move
         if (stillstand)
@@ -312,7 +312,7 @@ public:
         double absSlipFL = std::max(std::hypot(slipFL, syfl), 0.00001);
         double absSlipFR = std::max(std::hypot(slipFR, syfr), 0.00001);
         double absSlipRL = std::max(std::hypot(slipRL, syrl), 0.00001);
-        double absSlipRR = std::max(std::hypot(slipRR, syrl), 0.00001);
+        double absSlipRR = std::max(std::hypot(slipRR, syrr), 0.00001);
 
         double M_FL = this->gearRatio * torques.FL;
         double M_FR = this->gearRatio * torques.FR;
@@ -341,7 +341,7 @@ public:
             ? std::sqrt(std::max(1 - std::pow(Fx_RL / (Fz_RL * Dlon), 2.0), std::pow(0.1, 2.0)))
             : 1.0;
         Dlat_RR *= (vCog.norm() > 0.5)
-            ? std::sqrt(std::max(1 - std::pow(Fx_FR / (Fz_RR * Dlon), 2.0), std::pow(0.1, 2.0)))
+            ? std::sqrt(std::max(1 - std::pow(Fx_RR / (Fz_RR * Dlon), 2.0), std::pow(0.1, 2.0)))
             : 1.0;
 
         fy_stat_fl = Dlat_FL * processSlipAngleLat(kappaFL);
@@ -467,7 +467,7 @@ public:
                              + std::sin(this->steeringAngles.RL) * Fx_RL + std::cos(this->steeringAngles.RL) * Fy_RL
                              + std::sin(this->steeringAngles.RR) * Fx_RR + std::cos(this->steeringAngles.RR) * Fy_RR)
             / m;
-        double ayModel = (ayTires);
+        double ayModel = (ayTires - friction.y());
 
         double rdotFx = 0.5 * this->sf * (-Fx_FL * std::cos(leftSteering) + Fx_FR * std::cos(rightSteering))
             + this->lf * (Fx_FL * std::sin(leftSteering) + Fx_FR * std::sin(rightSteering))
