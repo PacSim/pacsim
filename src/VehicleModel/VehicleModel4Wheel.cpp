@@ -144,8 +144,15 @@ public:
         return;
     }
 
-    void setPosition(Eigen::Vector3d position) { this->position = position; }
-    void setOrientation(Eigen::Vector3d orientation) { this->orientation = orientation; }
+    void setPosition(Eigen::Vector3d position) { 
+        this->position = position;
+        this->stateVectorBck(0, 0) = position[0];
+        this->stateVectorBck(1, 0) = position[1];
+    }
+    void setOrientation(Eigen::Vector3d orientation) { 
+        this->orientation = orientation;
+        this->stateVectorBck(2, 0) = orientation[2];
+    }
 
     double processSlipAngleLat(double alpha)
     {
