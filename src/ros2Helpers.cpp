@@ -463,7 +463,7 @@ pacsim::msg::Track createRosTrackMessage(const Track& data, std::string frameId,
         ret.path_left_point_indices.push_back(val);
     }
     for (auto val : data.path_right_point_indices) {
-        ret.path_right_point_indices.push_back(val);
+        ret.path_right_points_indices.push_back(val);
     }
 
     return ret;
