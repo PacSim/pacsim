@@ -1,7 +1,6 @@
 #ifndef CONFIGPARSER_HPP
 #define CONFIGPARSER_HPP
 
-#include "rclcpp/rclcpp.hpp"
 #include "types.hpp"
 #include "yaml-cpp/yaml.h"
 #include <memory>
@@ -25,6 +24,7 @@ public:
     bool hasElement(string elementName);
     vector<ConfigElement> getElements();
     ConfigElement getElement(string elementName);
+    ConfigElement getConfigElement(string elementName);
     bool getElement(ConfigElement* element, string elementName);
     bool getElements(vector<ConfigElement>* vec);
     ConfigElement operator[](string elementName)

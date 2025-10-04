@@ -459,5 +459,12 @@ pacsim::msg::Track createRosTrackMessage(const Track& data, std::string frameId,
         ret.time_keeping_gates.push_back(LandmarkToRosMessage(gate.second, frameId, time));
     }
 
+    for (auto val : data.path_left_point_indices) {
+        ret.path_left_point_indices.push_back(val);
+    }
+    for (auto val : data.path_right_point_indices) {
+        ret.path_right_point_indices.push_back(val);
+    }
+
     return ret;
 }
