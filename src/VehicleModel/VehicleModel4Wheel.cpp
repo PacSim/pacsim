@@ -321,33 +321,51 @@ public:
 
         double minCombinedSlipFactor = 0.1;
 
-        fx_stat_fl = Fz_FL * Dlon * frictionCoefficients.FL * processSlipRatioLon(slipFL);
-        fx_stat_fr = Fz_FR * Dlon * frictionCoefficients.FR * processSlipRatioLon(slipFR);
-        fx_stat_rl = Fz_RL * Dlon * frictionCoefficients.RL * processSlipRatioLon(slipRL);
-        fx_stat_rr = Fz_RR * Dlon * frictionCoefficients.RR * processSlipRatioLon(slipRR);
-
+        double Dlon_FL = this->Dlon * frictionCoefficients.FL * Fz_FL;
+        double Dlon_FR = this->Dlon * frictionCoefficients.FR * Fz_FR;
+        double Dlon_RL = this->Dlon * frictionCoefficients.RL * Fz_RL;
+        double Dlon_RR = this->Dlon * frictionCoefficients.RR * Fz_RR;
+        
         double Dlat_FL = this->Dlat * frictionCoefficients.FL * Fz_FL;
         double Dlat_FR = this->Dlat * frictionCoefficients.FR * Fz_FR;
         double Dlat_RL = this->Dlat * frictionCoefficients.RL * Fz_RL;
         double Dlat_RR = this->Dlat * frictionCoefficients.RR * Fz_RR;
 
-        Dlat_FL *= (vCog.norm() > 0.5)
-            ? std::sqrt(std::max(1 - std::pow(Fx_FL / (Fz_FL * Dlon), 2.0), std::pow(0.1, 2.0)))
-            : 1.0;
-        Dlat_FR *= (vCog.norm() > 0.5)
-            ? std::sqrt(std::max(1 - std::pow(Fx_FR / (Fz_FR * Dlon), 2.0), std::pow(0.1, 2.0)))
-            : 1.0;
-        Dlat_RL *= (vCog.norm() > 0.5)
-            ? std::sqrt(std::max(1 - std::pow(Fx_RL / (Fz_RL * Dlon), 2.0), std::pow(0.1, 2.0)))
-            : 1.0;
-        Dlat_RR *= (vCog.norm() > 0.5)
-            ? std::sqrt(std::max(1 - std::pow(Fx_RR / (Fz_RR * Dlon), 2.0), std::pow(0.1, 2.0)))
-            : 1.0;
 
-        fy_stat_fl = Dlat_FL * processSlipAngleLat(kappaFL);
-        fy_stat_fr = Dlat_FR * processSlipAngleLat(kappaFR);
-        fy_stat_rl = Dlat_RL * processSlipAngleLat(kappaRL);
-        fy_stat_rr = Dlat_RR * processSlipAngleLat(kappaRR);
+        double fx_stat_fl_rel = processSlipRatioLon(slipFL);
+        double fx_stat_fr_rel = processSlipRatioLon(slipFR);
+        double fx_stat_rl_rel = processSlipRatioLon(slipRL);
+        double fx_stat_rr_rel = processSlipRatioLon(slipRR);
+
+        double fy_stat_fl_rel = processSlipAngleLat(kappaFL);
+        double fy_stat_fr_rel = processSlipAngleLat(kappaFR);
+        double fy_stat_rl_rel = processSlipAngleLat(kappaRL);
+        double fy_stat_rr_rel = processSlipAngleLat(kappaRR);
+
+        // https://chatgpt.com/share/68e158f0-b148-8010-9f1a-d7c586e99ae3
+        double n_fl = std::sqrt(fx_stat_fl_rel*fx_stat_fl_rel + fy_stat_fl_rel*fy_stat_fl_rel);
+        double n_fr = std::sqrt(fx_stat_fr_rel*fx_stat_fr_rel + fy_stat_fr_rel*fy_stat_fr_rel);
+        double n_rl = std::sqrt(fx_stat_rl_rel*fx_stat_rl_rel + fy_stat_rl_rel*fy_stat_rl_rel);
+        double n_rr = std::sqrt(fx_stat_rr_rel*fx_stat_rr_rel + fy_stat_rr_rel*fy_stat_rr_rel);
+
+        // small beta -> more sharp grip loss
+        double beta = 0.2;
+
+        double S_fl = 1.0/std::sqrt(1+std::pow((std::max(0.0,n_fl-1.0)/beta),2.0));
+        double S_fr = 1.0/std::sqrt(1+std::pow((std::max(0.0,n_fr-1.0)/beta),2.0));
+        double S_rl = 1.0/std::sqrt(1+std::pow((std::max(0.0,n_rl-1.0)/beta),2.0));
+        double S_rr = 1.0/std::sqrt(1+std::pow((std::max(0.0,n_rr-1.0)/beta),2.0));
+        
+
+        fx_stat_fl = S_fl * Dlon_FL * fx_stat_fl_rel;
+        fx_stat_fr = S_fr * Dlon_FR * fx_stat_fr_rel;
+        fx_stat_rl = S_rl * Dlon_RL * fx_stat_rl_rel;
+        fx_stat_rr = S_rr * Dlon_RR * fx_stat_rr_rel;
+
+        fy_stat_fl = S_fl * Dlat_FL * fy_stat_fl_rel;
+        fy_stat_fr = S_fr * Dlat_FR * fy_stat_fr_rel;
+        fy_stat_rl = S_rl * Dlat_RL * fy_stat_rl_rel;
+        fy_stat_rr = S_rr * Dlat_RR * fy_stat_rr_rel;
 
         Eigen::Matrix<double, 8, 1> retVal;
         retVal(0, 0) = fx_stat_fl;
