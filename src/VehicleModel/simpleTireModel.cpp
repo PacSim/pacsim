@@ -26,15 +26,16 @@ Eigen::Vector3d getTireForcesFromModel(double slip_ratio, double slip_angle, dou
 
         if(sigma_norm > epsilon) {
             // use longitudinal model as scaling reference
-            double f_total = processSlipRatioLon(sigma_norm * params.kappa_peak, params);
+            double fx_norm = processSlipRatioLon(sigma_norm * params.kappa_peak, params);
+            double fy_norm = processSlipAngleLat(sigma_norm * params.alpha_peak, params);
             
             double Dlon = params.Dlon * friction_coefficient * fz;
             
             double Dlat = params.Dlat * friction_coefficient * fz;
             
-            double fx_combined = Dlon * (kappa_norm / sigma_norm) * f_total;
+            double fx_combined = Dlon * (kappa_norm / sigma_norm) * fx_norm;
             
-            double fy_combined = -Dlat * (tan_alpha_norm / sigma_norm) * f_total;
+            double fy_combined = Dlat * (tan_alpha_norm / sigma_norm) * fy_norm;
             
             fx_stat = fx_combined;
             fy_stat = fy_combined;

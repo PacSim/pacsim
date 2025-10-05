@@ -4,12 +4,12 @@
 #include <Eigen/Core>
 
 struct tireParams {
-    double Blat = 9.63;
-    double Clat = -1.39;
+    double Blat = 10.0;
+    double Clat = -1.9;
     double Dlat = 1.6;
-    double Elat = 1.0;
+    double Elat = 0.98;
     // TODO get this automatically
-    double alpha_peak = 0.174533;
+    double alpha_peak = 0.1832;
 
     double Blon = 11.5;
     double Clon = 2.196;
