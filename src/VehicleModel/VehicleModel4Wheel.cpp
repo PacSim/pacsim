@@ -195,11 +195,12 @@ public:
         Eigen::Vector3d velocity(stateVector(3, 0), stateVector(4, 0), 0.0);
         Eigen::Vector3d angularVelocity(0.0, 0.0, stateVector(5, 0));
 
-        Eigen::Vector3d friction(std::min(200.0, 2000.0 * std::abs(velocity.x())),
-        std::min(200.0, 2000.0 * std::abs(velocity.y())), std::min(200.0, 2000.0 * std::abs(velocity.z())));
-        friction[0] = (velocity.x() > 0) ? friction.x() : -friction.x();
-        friction[1] = (velocity.y() > 0) ? friction.y() : -friction.y();
-        friction[2] = (velocity.z() > 0) ? friction.z() : -friction.z();
+        // y only needs small friction since there is slip angle as an implicit brake force, so keep it small to not distort model
+        Eigen::Vector3d fFriction(std::min(200.0, 2000.0 * std::abs(velocity.x())),
+            std::min(10.0, 100.0 * std::abs(velocity.y())), std::min(10.0, 100.0 * std::abs(velocity.z())));
+        fFriction[0] = (velocity.x() > 0) ? fFriction.x() : -fFriction.x();
+        fFriction[1] = (velocity.y() > 0) ? fFriction.y() : -fFriction.y();
+        fFriction[2] = (velocity.z() > 0) ? fFriction.z() : -fFriction.z();
 
         double l = this->lr + this->lf;
         double vx = velocity.x();
@@ -226,14 +227,14 @@ public:
                              + std::cos(this->steeringAngles.RL) * Fx_RL - std::sin(this->steeringAngles.RL) * Fy_RL
                              + std::cos(this->steeringAngles.RR) * Fx_RR - std::sin(this->steeringAngles.RR) * Fy_RR)
             / m;
-        double ax = axTires - (F_aero_drag + friction.x()) / m;
+        double ax = axTires - (F_aero_drag + fFriction.x()) / m;
 
         double ayTires = (std::sin(leftSteering) * Fx_FL + std::cos(leftSteering) * Fy_FL
                              + std::sin(rightSteering) * Fx_FR + std::cos(rightSteering) * Fy_FR
                              + std::sin(this->steeringAngles.RL) * Fx_RL + std::cos(this->steeringAngles.RL) * Fy_RL
                              + std::sin(this->steeringAngles.RR) * Fx_RR + std::cos(this->steeringAngles.RR) * Fy_RR)
             / m;
-        double ay = (ayTires);
+        double ay = ayTires - (fFriction.y()/m);
 
         double r = angularVelocity.z();
         double g = 9.81;
@@ -315,6 +316,7 @@ public:
         auto forces_fr = getTireForcesFromModel(slipFR, kappaFR, Fz_FR, frictionCoefficients.FR, tireParams());         
         auto forces_rl = getTireForcesFromModel(slipRL, kappaRL, Fz_RL, frictionCoefficients.RL, tireParams());         
         auto forces_rr = getTireForcesFromModel(slipRR, kappaRR, Fz_RR, frictionCoefficients.RR, tireParams());         
+
 
         fx_stat_fl = forces_fl[0];
         fx_stat_fr = forces_fr[0];
@@ -423,11 +425,12 @@ public:
         double F_aero_downforce = 0.5 * 1.29 * this->aeroArea * this->cla * (vx * vx) + this->powerGroundSetpoint * this->powerGroundForce;
         double F_aero_drag = 0.5 * 1.29 * this->aeroArea * this->cda * (vx * vx);
 
-        Eigen::Vector3d friction(std::min(200.0, 2000.0 * std::abs(velocity.x())),
-            std::min(200.0, 2000.0 * std::abs(velocity.y())), std::min(200.0, 2000.0 * std::abs(velocity.z())));
-        friction[0] = (velocity.x() > 0) ? friction.x() : -friction.x();
-        friction[1] = (velocity.y() > 0) ? friction.y() : -friction.y();
-        friction[2] = (velocity.z() > 0) ? friction.z() : -friction.z();
+        // y only needs small friction since there is slip angle as an implicit brake force, so keep it small to not distort model
+        Eigen::Vector3d fFriction(std::min(200.0, 2000.0 * std::abs(velocity.x())),
+            std::min(10.0, 100.0 * std::abs(velocity.y())), std::min(10.0, 100.0 * std::abs(velocity.z())));
+        fFriction[0] = (velocity.x() > 0) ? fFriction.x() : -fFriction.x();
+        fFriction[1] = (velocity.y() > 0) ? fFriction.y() : -fFriction.y();
+        fFriction[2] = (velocity.z() > 0) ? fFriction.z() : -fFriction.z();
 
         double leftSteering, rightSteering;
         steeringKinematic(state(22, 0), leftSteering, rightSteering);
@@ -437,14 +440,14 @@ public:
                              + std::cos(this->steeringAngles.RL) * Fx_RL - std::sin(this->steeringAngles.RL) * Fy_RL
                              + std::cos(this->steeringAngles.RR) * Fx_RR - std::sin(this->steeringAngles.RR) * Fy_RR)
             / m;
-        double axModel = axTires - (F_aero_drag + friction.x()) / m;
+        double axModel = axTires - (F_aero_drag + fFriction.x()) / m;
 
         double ayTires = (std::sin(leftSteering) * Fx_FL + std::cos(leftSteering) * Fy_FL
                              + std::sin(rightSteering) * Fx_FR + std::cos(rightSteering) * Fy_FR
                              + std::sin(this->steeringAngles.RL) * Fx_RL + std::cos(this->steeringAngles.RL) * Fy_RL
                              + std::sin(this->steeringAngles.RR) * Fx_RR + std::cos(this->steeringAngles.RR) * Fy_RR)
             / m;
-        double ayModel = (ayTires - friction.y());
+        double ayModel = ayTires - (fFriction.y()/m);
 
         double rdotFx = 0.5 * this->sf * (-Fx_FL * std::cos(leftSteering) + Fx_FR * std::cos(rightSteering))
             + this->lf * (Fx_FL * std::sin(leftSteering) + Fx_FR * std::sin(rightSteering))
