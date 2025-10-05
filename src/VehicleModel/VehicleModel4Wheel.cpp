@@ -1,6 +1,8 @@
 #include "VehicleModel/VehicleModelInterface.hpp"
 
 #include "transform.hpp"
+
+#include "VehicleModel/simpleTireModel.hpp"
 class VehicleModel4Wheel : public IVehicleModel
 {
 
@@ -154,11 +156,6 @@ public:
         this->stateVectorBck(2, 0) = orientation[2];
     }
 
-    double processSlipAngleLat(double alpha)
-    {
-        return std::sin(Clat * std::atan(Blat * alpha - Elat * (Blat * alpha - std::atan(Blat * alpha))));
-    }
-
     double getSlip(double wheelspeed, double vx)
     {
         double eps = 0.0001;
@@ -168,11 +165,6 @@ public:
             ret = -ret;
         }
         return std::max(std::min(ret, 1.0), -1.0);
-    }
-
-    double processSlipRatioLon(double kappa)
-    {
-        return std::sin(Clon * std::atan(Blon * kappa - Elon * (Blon * kappa - std::atan(Blon * kappa))));
     }
 
     Eigen::Matrix<double, 8, 1> getTireForcesStationary(
@@ -319,53 +311,20 @@ public:
         double M_RL = this->gearRatio * torques.RL;
         double M_RR = this->gearRatio * torques.RR;
 
-        double minCombinedSlipFactor = 0.1;
+        auto forces_fl = getTireForcesFromModel(slipFL, kappaFL, Fz_FL, frictionCoefficients.FL, tireParams());         
+        auto forces_fr = getTireForcesFromModel(slipFR, kappaFR, Fz_FR, frictionCoefficients.FR, tireParams());         
+        auto forces_rl = getTireForcesFromModel(slipRL, kappaRL, Fz_RL, frictionCoefficients.RL, tireParams());         
+        auto forces_rr = getTireForcesFromModel(slipRR, kappaRR, Fz_RR, frictionCoefficients.RR, tireParams());         
 
-        double Dlon_FL = this->Dlon * frictionCoefficients.FL * Fz_FL;
-        double Dlon_FR = this->Dlon * frictionCoefficients.FR * Fz_FR;
-        double Dlon_RL = this->Dlon * frictionCoefficients.RL * Fz_RL;
-        double Dlon_RR = this->Dlon * frictionCoefficients.RR * Fz_RR;
-        
-        double Dlat_FL = this->Dlat * frictionCoefficients.FL * Fz_FL;
-        double Dlat_FR = this->Dlat * frictionCoefficients.FR * Fz_FR;
-        double Dlat_RL = this->Dlat * frictionCoefficients.RL * Fz_RL;
-        double Dlat_RR = this->Dlat * frictionCoefficients.RR * Fz_RR;
+        fx_stat_fl = forces_fl[0];
+        fx_stat_fr = forces_fr[0];
+        fx_stat_rl = forces_rl[0];
+        fx_stat_rr = forces_rr[0];
 
-
-        double fx_stat_fl_rel = processSlipRatioLon(slipFL);
-        double fx_stat_fr_rel = processSlipRatioLon(slipFR);
-        double fx_stat_rl_rel = processSlipRatioLon(slipRL);
-        double fx_stat_rr_rel = processSlipRatioLon(slipRR);
-
-        double fy_stat_fl_rel = processSlipAngleLat(kappaFL);
-        double fy_stat_fr_rel = processSlipAngleLat(kappaFR);
-        double fy_stat_rl_rel = processSlipAngleLat(kappaRL);
-        double fy_stat_rr_rel = processSlipAngleLat(kappaRR);
-
-        // https://chatgpt.com/share/68e158f0-b148-8010-9f1a-d7c586e99ae3
-        double n_fl = std::sqrt(fx_stat_fl_rel*fx_stat_fl_rel + fy_stat_fl_rel*fy_stat_fl_rel);
-        double n_fr = std::sqrt(fx_stat_fr_rel*fx_stat_fr_rel + fy_stat_fr_rel*fy_stat_fr_rel);
-        double n_rl = std::sqrt(fx_stat_rl_rel*fx_stat_rl_rel + fy_stat_rl_rel*fy_stat_rl_rel);
-        double n_rr = std::sqrt(fx_stat_rr_rel*fx_stat_rr_rel + fy_stat_rr_rel*fy_stat_rr_rel);
-
-        // small beta -> more sharp grip loss
-        double beta = 0.2;
-
-        double S_fl = 1.0/std::sqrt(1+std::pow((std::max(0.0,n_fl-1.0)/beta),2.0));
-        double S_fr = 1.0/std::sqrt(1+std::pow((std::max(0.0,n_fr-1.0)/beta),2.0));
-        double S_rl = 1.0/std::sqrt(1+std::pow((std::max(0.0,n_rl-1.0)/beta),2.0));
-        double S_rr = 1.0/std::sqrt(1+std::pow((std::max(0.0,n_rr-1.0)/beta),2.0));
-        
-
-        fx_stat_fl = S_fl * Dlon_FL * fx_stat_fl_rel;
-        fx_stat_fr = S_fr * Dlon_FR * fx_stat_fr_rel;
-        fx_stat_rl = S_rl * Dlon_RL * fx_stat_rl_rel;
-        fx_stat_rr = S_rr * Dlon_RR * fx_stat_rr_rel;
-
-        fy_stat_fl = S_fl * Dlat_FL * fy_stat_fl_rel;
-        fy_stat_fr = S_fr * Dlat_FR * fy_stat_fr_rel;
-        fy_stat_rl = S_rl * Dlat_RL * fy_stat_rl_rel;
-        fy_stat_rr = S_rr * Dlat_RR * fy_stat_rr_rel;
+        fy_stat_fl = forces_fl[1];
+        fy_stat_fr = forces_fr[1];
+        fy_stat_rl = forces_rl[1];
+        fy_stat_rr = forces_rr[1];
 
         Eigen::Matrix<double, 8, 1> retVal;
         retVal(0, 0) = fx_stat_fl;
