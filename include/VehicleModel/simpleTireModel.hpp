@@ -8,11 +8,15 @@ struct tireParams {
     double Clat = -1.39;
     double Dlat = 1.6;
     double Elat = 1.0;
+    // TODO get this automatically
+    double alpha_peak = 0.174533;
 
     double Blon = 11.5;
     double Clon = 2.196;
     double Dlon = 1.6;
     double Elon = 1.0;
+    // TODO get this automatically
+    double kappa_peak = 0.1028;
 };
 
 double processSlipAngleLat(double alpha, const tireParams& params);
