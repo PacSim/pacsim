@@ -1,0 +1,327 @@
+track:
+  version: 1.0
+  lanesFirstWithLastConnected: true
+  start:
+    position: [0.0, 0.0, 0.0]
+    orientation: [0.0, 0.0, 0.0]
+  earthToTrack:
+    position: [47.581722, 19.24475, 0.0]
+    orientation: [0.0, 0.0, -2.0944]
+  left:
+  - position: [-0.74, 1.682, 0.0]
+    class: blue
+  - position: [2.66, 2.023, 0.0]
+    class: blue
+  - position: [5.09, 1.827, 0.0]
+    class: blue
+  - position: [8.255313378836474, 1.7205671724866967, 0.0]
+    class: blue
+  - position: [11.455, 1.462, 0.0]
+    class: blue
+  - position: [14.857, 1.182, 0.0]
+    class: blue
+  - position: [18.649, 0.868, 0.0]
+    class: blue
+  - position: [21.497, 0.65, 0.0]
+    class: blue
+  - position: [26.323, 0.282, 0.0]
+    class: blue
+  - position: [30.439, -0.408, 0.0]
+    class: blue
+  - position: [34.868, -0.921, 0.0]
+    class: blue
+  - position: [39.368, -1.372, 0.0]
+    class: blue
+  - position: [42.282, -2.461, 0.0]
+    class: blue
+  - position: [43.623, -3.461, 0.0]
+    class: blue
+  - position: [45.649, -6.124, 0.0]
+    class: blue
+  - position: [46.288, -10.475, 0.0]
+    class: blue
+  - position: [46.659, -15.11, 0.0]
+    class: blue
+  - position: [45.479, -17.896, 0.0]
+    class: blue
+  - position: [43.596, -20.61, 0.0]
+    class: blue
+  - position: [41.392, -23.431, 0.0]
+    class: blue
+  - position: [38.261, -25.226, 0.0]
+    class: blue
+  - position: [34.496, -27.073, 0.0]
+    class: blue
+  - position: [30.776, -28.292, 0.0]
+    class: blue
+  - position: [27.119, -29.23, 0.0]
+    class: blue
+  - position: [23.683, -29.682, 0.0]
+    class: blue
+  - position: [19.42, -29.661, 0.0]
+    class: blue
+  - position: [15.641, -28.672, 0.0]
+    class: blue
+  - position: [12.35, -26.144, 0.0]
+    class: blue
+  - position: [10.592, -23.294, 0.0]
+    class: blue
+  - position: [7.721, -21.083, 0.0]
+    class: blue
+  - position: [3.524, -19.754, 0.0]
+    class: blue
+  - position: [-0.748, -20.012, 0.0]
+    class: blue
+  - position: [-4.773, -21.503, 0.0]
+    class: blue
+  - position: [-5.661, -25.067, 0.0]
+    class: blue
+  - position: [-5.351, -28.877, 0.0]
+    class: blue
+  - position: [-5.726, -32.167, 0.0]
+    class: blue
+  - position: [-6.84, -34.921, 0.0]
+    class: blue
+  - position: [-9.655, -38.561, 0.0]
+    class: blue
+  - position: [-9.285, -42.224, 0.0]
+    class: blue
+  - position: [-7.557, -44.682, 0.0]
+    class: blue
+  - position: [-5.649, -46.965, 0.0]
+    class: blue
+  - position: [-3.314, -48.399, 0.0]
+    class: blue
+  - position: [0.372, -49.325, 0.0]
+    class: blue
+  - position: [5.015, -49.502, 0.0]
+    class: blue
+  - position: [8.808, -49.135, 0.0]
+    class: blue
+  - position: [13.374, -49.806, 0.0]
+    class: blue
+  - position: [16.809, -52.223, 0.0]
+    class: blue
+  - position: [19.011, -54.741, 0.0]
+    class: blue
+  - position: [20.223, -58.011, 0.0]
+    class: blue
+  - position: [20.453, -62.012, 0.0]
+    class: blue
+  - position: [19.814, -66.249, 0.0]
+    class: blue
+  - position: [17.661, -70.459, 0.0]
+    class: blue
+  - position: [14.539385030059925, -74.0862214525816, 0.0]
+    class: blue
+  - position: [11.115, -76.115, 0.0]
+    class: blue
+  - position: [6.812, -77.948, 0.0]
+    class: blue
+  - position: [2.392, -76.323, 0.0]
+    class: blue
+  - position: [-2.055, -74.658, 0.0]
+    class: blue
+  - position: [-4.892, -73.748, 0.0]
+    class: blue
+  - position: [-7.089, -72.68, 0.0]
+    class: blue
+  - position: [-10.334, -71.406, 0.0]
+    class: blue
+  - position: [-14.604, -68.824, 0.0]
+    class: blue
+  - position: [-16.907, -65.368, 0.0]
+    class: blue
+  - position: [-18.03, -62.054, 0.0]
+    class: blue
+  - position: [-20.964, -58.466, 0.0]
+    class: blue
+  - position: [-22.792, -54.908, 0.0]
+    class: blue
+  - position: [-23.799, -51.252, 0.0]
+    class: blue
+  - position: [-24.986, -46.269, 0.0]
+    class: blue
+  - position: [-26.333, -42.777, 0.0]
+    class: blue
+  - position: [-27.235, -38.945, 0.0]
+    class: blue
+  - position: [-28.072, -34.39, 0.0]
+    class: blue
+  - position: [-28.337, -30.738, 0.0]
+    class: blue
+  - position: [-28.723, -26.413, 0.0]
+    class: blue
+  - position: [-28.379, -22.721, 0.0]
+    class: blue
+  - position: [-27.158, -18.152, 0.0]
+    class: blue
+  - position: [-25.891, -14.234, 0.0]
+    class: blue
+  - position: [-24.149, -10.04, 0.0]
+    class: blue
+  - position: [-21.342, -6.435, 0.0]
+    class: blue
+  - position: [-18.649, -3.634, 0.0]
+    class: blue
+  - position: [-15.595, -1.625, 0.0]
+    class: blue
+  - position: [-11.738, 0.061, 0.0]
+    class: blue
+  - position: [-7.534, 1.35, 0.0]
+    class: blue
+  - position: [-3.779, 1.714, 0.0]
+    class: blue
+  right:
+  - position: [-0.887, -2.258, 0.0]
+    class: yellow
+  - position: [2.223, -1.907, 0.0]
+    class: yellow
+  - position: [5.132, -1.872, 0.0]
+    class: yellow
+  - position: [8.09641820952108, -2.108447723809865, 0.0]
+    class: yellow
+  - position: [11.449, -2.173, 0.0]
+    class: yellow
+  - position: [14.939, -2.414, 0.0]
+    class: yellow
+  - position: [18.091, -2.607, 0.0]
+    class: yellow
+  - position: [21.603, -2.715, 0.0]
+    class: yellow
+  - position: [25.606, -3.336, 0.0]
+    class: yellow
+  - position: [29.686, -3.732, 0.0]
+    class: yellow
+  - position: [33.976, -4.246, 0.0]
+    class: yellow
+  - position: [38.417, -5.711, 0.0]
+    class: yellow
+  - position: [41.567, -8.666, 0.0]
+    class: yellow
+  - position: [42.559, -13.054, 0.0]
+    class: yellow
+  - position: [40.633, -17.144, 0.0]
+    class: yellow
+  - position: [36.721, -20.101, 0.0]
+    class: yellow
+  - position: [32.65, -22.207, 0.0]
+    class: yellow
+  - position: [28.293, -24.018, 0.0]
+    class: yellow
+  - position: [24.402, -25.46, 0.0]
+    class: yellow
+  - position: [20.557, -25.976, 0.0]
+    class: yellow
+  - position: [17.33, -24.891, 0.0]
+    class: yellow
+  - position: [14.67, -21.99, 0.0]
+    class: yellow
+  - position: [11.03, -18.572, 0.0]
+    class: yellow
+  - position: [7.098, -16.178, 0.0]
+    class: yellow
+  - position: [2.221, -15.542, 0.0]
+    class: yellow
+  - position: [-2.604, -16.442, 0.0]
+    class: yellow
+  - position: [-7.165, -17.759, 0.0]
+    class: yellow
+  - position: [-10.606, -21.733, 0.0]
+    class: yellow
+  - position: [-10.235, -26.938, 0.0]
+    class: yellow
+  - position: [-9.788, -30.481, 0.0]
+    class: yellow
+  - position: [-11.352, -34.172, 0.0]
+    class: yellow
+  - position: [-13.477, -37.183, 0.0]
+    class: yellow
+  - position: [-13.121, -42.143, 0.0]
+    class: yellow
+  - position: [-11.422, -46.515, 0.0]
+    class: yellow
+  - position: [-8.334, -50.244, 0.0]
+    class: yellow
+  - position: [-3.713, -52.86, 0.0]
+    class: yellow
+  - position: [0.498, -54.017, 0.0]
+    class: yellow
+  - position: [4.839, -53.855, 0.0]
+    class: yellow
+  - position: [8.981, -53.349, 0.0]
+    class: yellow
+  - position: [12.368, -54.745, 0.0]
+    class: yellow
+  - position: [14.288, -57.701, 0.0]
+    class: yellow
+  - position: [15.292, -61.045, 0.0]
+    class: yellow
+  - position: [14.947, -65.522, 0.0]
+    class: yellow
+  - position: [13.619, -69.172, 0.0]
+    class: yellow
+  - position: [10.545, -71.656, 0.0]
+    class: yellow
+  - position: [7.086, -72.561, 0.0]
+    class: yellow
+  - position: [3.037, -72.444, 0.0]
+    class: yellow
+  - position: [-1.36, -70.902, 0.0]
+    class: yellow
+  - position: [-5.854, -69.176, 0.0]
+    class: yellow
+  - position: [-9.455, -67.534, 0.0]
+    class: yellow
+  - position: [-11.646, -65.503, 0.0]
+    class: yellow
+  - position: [-13.402, -62.26, 0.0]
+    class: yellow
+  - position: [-14.695, -59.412, 0.0]
+    class: yellow
+  - position: [-16.574, -57.174, 0.0]
+    class: yellow
+  - position: [-19.493, -53.367, 0.0]
+    class: yellow
+  - position: [-20.872, -49.341, 0.0]
+    class: yellow
+  - position: [-21.403, -44.956, 0.0]
+    class: yellow
+  - position: [-22.519, -41.828, 0.0]
+    class: yellow
+  - position: [-23.385, -39.134, 0.0]
+    class: yellow
+  - position: [-23.995, -35.076, 0.0]
+    class: yellow
+  - position: [-24.281, -31.59, 0.0]
+    class: yellow
+  - position: [-24.522, -28.599, 0.0]
+    class: yellow
+  - position: [-24.596, -25.513, 0.0]
+    class: yellow
+  - position: [-23.843, -22.27, 0.0]
+    class: yellow
+  - position: [-22.64, -19.145, 0.0]
+    class: yellow
+  - position: [-21.367, -15.934, 0.0]
+    class: yellow
+  - position: [-20.279, -13.095, 0.0]
+    class: yellow
+  - position: [-18.315, -9.481, 0.0]
+    class: yellow
+  - position: [-15.382, -6.768, 0.0]
+    class: yellow
+  - position: [-12.883, -4.642, 0.0]
+    class: yellow
+  - position: [-9.487, -3.08, 0.0]
+    class: yellow
+  - position: [-6.44, -2.753, 0.0]
+    class: yellow
+  - position: [-3.775, -2.571, 0.0]
+    class: yellow
+  time_keeping:
+  - position: [7.166975790251246, -6.926741964879694, 0.0]
+    class: timekeeping
+  - position: [8.127911091737444, 6.806625052193919, 0.0]
+    class: timekeeping
+  unknown: []
