@@ -5,8 +5,8 @@ track:
     position: [0.0, 0.0, 0.0]
     orientation: [0.0, 0.0, 0.0]
   earthToTrack:
-    position: [47.581722, 19.24475, 0.0]
-    orientation: [0.0, 0.0, -2.0944]
+    position: [0.0, 0.0, 0.0]
+    orientation: [0.0, 0.0, 0.0]
   left:
   - position: [-0.74, 1.682, 0.0]
     class: blue
