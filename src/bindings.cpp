@@ -240,7 +240,7 @@ std::pair<std::vector<double>, std::vector<std::tuple<Eigen::Vector2d, Eigen::Ve
 }
 
 
-PYBIND11_MODULE(example, m) {
+PYBIND11_MODULE(pacsim_pybind, m) {
     m.doc() = "pybind11 example plugin"; // optional module docstring
 
     m.def("add", &add, "A function that adds two numbers");
@@ -413,7 +413,3 @@ PYBIND11_MODULE(example, m) {
     // .def_readwrite("colors", &Landmark::colors);
 
 }
- 
-
-// export CPATH=/usr/include/python3.10:$CPATH
-// export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
