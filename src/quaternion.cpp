@@ -64,10 +64,10 @@ quaternion quatFromEulerAngles(Eigen::Vector3d a)
     quatY.z = 0.0;
 
     quaternion quatZ;
-    quatX.w = std::cos(z / 2);
-    quatX.x = 0.0;
-    quatX.y = 0.0;
-    quatX.z = std::sin(z / 2);
+    quatZ.w = std::cos(z / 2);
+    quatZ.x = 0.0;
+    quatZ.y = 0.0;
+    quatZ.z = std::sin(z / 2);
 
     quaternion ret;
     ret.w = 1.0;
