@@ -53,9 +53,9 @@ ImuData ImuSensor::applyError(ImuData input)
     input.acc_cov(1, 1) = error_sigma_acc * error_sigma_acc;
     input.acc_cov(2, 2) = error_sigma_acc * error_sigma_acc;
 
-    input.rot.x() += distAccError(generator);
-    input.rot.y() += distAccError(generator);
-    input.rot.z() += distAccError(generator);
+    input.rot.x() += distRotError(generator);
+    input.rot.y() += distRotError(generator);
+    input.rot.z() += distRotError(generator);
 
     input.rot_cov(0, 0) = error_sigma_rot * error_sigma_rot;
     input.rot_cov(1, 1) = error_sigma_rot * error_sigma_rot;

@@ -138,6 +138,15 @@ bool GnssSensor::RunTick(Eigen::Vector3d& gnssOrigin, Eigen::Vector3d& enuToTrac
         {
             actualTrackCar = eulerAnglesToRotMat(start_orientation).transpose() * trans + start_position;
         }
+
+        Eigen::Matrix3d R_body_to_world = eulerAnglesToRotMat(rot).transpose();
+        if (trackPreTransformed)
+        {
+            R_body_to_world = eulerAnglesToRotMat(start_orientation).transpose() * R_body_to_world;
+        }
+        Eigen::Vector3d gpsLeverArmWorld = R_body_to_world * this->position;
+        actualTrackCar += gpsLeverArmWorld;
+
         Eigen::Vector3d enuCar = rotMatTrackToEnu * actualTrackCar;
 
         std::default_random_engine generator(noiseSeed);

@@ -159,9 +159,9 @@ public:
         double steeringFront = 0.5 * (this->steeringAngles.FL + this->steeringAngles.FR);
 
         // max because lifted tire makes no forces
-        double Fz_Front = std::max(0.0, ((m * g + F_aero_downforce) * 0.5 * this->lr / l));
-        double Fz_Rear = std::max(0.0, ((m * g + F_aero_downforce) * 0.5 * this->lf / l));
-
+        double Fz_Front = std::max(0.0, ((m * g * this->lr / l) + (F_aero_downforce * 0.5)));
+        double Fz_Rear = std::max(0.0, ((m * g * this->lf / l) + (F_aero_downforce * 0.5)));
+        
         Eigen::Vector3d vCog = this->velocity;
         Eigen::Vector3d omega = this->angularVelocity;
 
@@ -170,7 +170,7 @@ public:
         Eigen::Vector3d rRL = Eigen::Vector3d(-lr, 0.5 * sr, 0.0);
         Eigen::Vector3d rRR = Eigen::Vector3d(-lr, -0.5 * sr, 0.0);
         Eigen::Vector3d rFront = Eigen::Vector3d(lf, 0.0, 0.0);
-        Eigen::Vector3d rRear = Eigen::Vector3d(-lf, 0.0, 0.0);
+        Eigen::Vector3d rRear = Eigen::Vector3d(-lr, 0.0, 0.0);
 
         Eigen::Vector3d vFL = vCog + omega.cross(rFL);
         Eigen::Vector3d vFR = vCog + omega.cross(rFR);
